@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vokabel-trainer-v2';
+const CACHE_NAME = 'vokabel-trainer-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -29,6 +29,20 @@ self.addEventListener('activate', event => {
 
 // Network-first, Fallback auf Cache
 self.addEventListener('fetch', event => {
+  // vokabeln.json immer frisch laden
+  if (event.request.url.includes('vokabeln.json')) {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put('./vokabeln.json', clone));
+          return response;
+        })
+        .catch(() => caches.match('./vokabeln.json'))
+    );
+    return;
+  }
+
   event.respondWith(
     fetch(event.request)
       .then(response => {

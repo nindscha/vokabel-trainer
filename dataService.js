@@ -6,7 +6,8 @@ const DataService = (() => {
 
   async function loadData() {
     if (cachedData) return cachedData;
-    const res = await fetch('vokabeln.json');
+    // Cache-Buster verhindert 10-Minuten HTTP-Caching auf GitHub Pages / Mobilgeräten
+    const res = await fetch('vokabeln.json?t=' + Date.now(), { cache: 'no-cache' });
     cachedData = await res.json();
     return cachedData;
   }
