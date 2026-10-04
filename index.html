@@ -120,7 +120,11 @@
         <div class="quiz-input-group">
           <input type="text" class="quiz-input" id="quiz-answer"
                  placeholder="Deine Antwort..."
-                 autocomplete="off" autocapitalize="none" spellcheck="false"
+                 autocomplete="off"
+                 autocorrect="off"
+                 autocapitalize="none"
+                 spellcheck="false"
+                 enterkeyhint="go"
                  onkeydown="App.handleQuizKeydown(event)">
         </div>
 
