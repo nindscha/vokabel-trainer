@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#667eea">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Vokabel-Trainer</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+
+    <!-- ==================== HOME ==================== -->
+    <div id="view-home" class="view active">
+      <div class="header">
+        <h1>📚 Vokabel-Trainer</h1>
+        <div class="header-stats" id="total-score">🔥 0</div>
+      </div>
+      <div id="week-list" class="week-list">
+        <!-- Dynamisch befüllt -->
+      </div>
+    </div>
+
+    <!-- ==================== MODE SELECTION ==================== -->
+    <div id="view-mode" class="view">
+      <div class="header">
+        <button class="back-btn" onclick="App.goHome()">← Zurück</button>
+      </div>
+      <div class="mode-selection">
+        <h2 id="mode-title">Woche 1</h2>
+        <p class="subtitle" id="mode-word-count">10 Vokabeln</p>
+
+        <div class="direction-toggle">
+          <button class="active" data-dir="de-en" onclick="App.setDirection('de-en')">
+            🇩🇪 → 🇬🇧
+          </button>
+          <button data-dir="en-de" onclick="App.setDirection('en-de')">
+            🇬🇧 → 🇩🇪
+          </button>
+        </div>
+
+        <div class="mode-cards">
+          <div class="mode-card" onclick="App.startFlashcards()">
+            <div class="mode-card-icon">🃏</div>
+            <div>
+              <h3>Karteikarten</h3>
+              <p>Tippe zum Aufdecken, bewerte dich selbst</p>
+            </div>
+          </div>
+          <div class="mode-card" onclick="App.startQuiz()">
+            <div class="mode-card-icon">✍️</div>
+            <div>
+              <h3>Quiz</h3>
+              <p>Tippe die Übersetzung ein</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== FLASHCARDS ==================== -->
+    <div id="view-flashcard" class="view">
+      <div class="header">
+        <button class="back-btn" onclick="App.goHome()">← Zurück</button>
+      </div>
+      <div class="flashcard-container">
+        <div class="flashcard-progress-text" id="flashcard-counter">1 / 10</div>
+
+        <div class="flashcard" id="flashcard" onclick="App.flipCard()">
+          <div class="flashcard-inner">
+            <div class="flashcard-front">
+              <div class="flashcard-label" id="fc-front-label">Deutsch</div>
+              <div class="flashcard-word" id="fc-front-word">Hund</div>
+              <div class="flashcard-hint">Tippe zum Aufdecken</div>
+            </div>
+            <div class="flashcard-back">
+              <div class="flashcard-label" id="fc-back-label">English</div>
+              <div class="flashcard-word" id="fc-back-word">dog</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flashcard-nav">
+          <button class="btn-next" id="fc-btn-flip" onclick="App.flipCard()">
+            Aufdecken
+          </button>
+          <button class="btn-didnt-know hidden" id="fc-btn-didnt"
+                  onclick="App.flashcardResult(false)">
+            ❌ Wusste ich nicht
+          </button>
+          <button class="btn-knew hidden" id="fc-btn-knew"
+                  onclick="App.flashcardResult(true)">
+            ✅ Wusste ich!
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== QUIZ ==================== -->
+    <div id="view-quiz" class="view">
+      <div class="header">
+        <button class="back-btn" onclick="App.goHome()">← Zurück</button>
+      </div>
+      <div class="quiz-container">
+        <div class="quiz-progress-text" id="quiz-counter">1 / 10</div>
+        <div class="quiz-progress-bar">
+          <div class="quiz-progress-fill" id="quiz-progress-fill" style="width: 0%"></div>
+        </div>
+
+        <div class="quiz-prompt">
+          <div class="quiz-prompt-label" id="quiz-prompt-label">Übersetze ins Englische:</div>
+          <div class="quiz-prompt-word" id="quiz-prompt-word">Hund</div>
+        </div>
+
+        <div class="quiz-input-group">
+          <input type="text" class="quiz-input" id="quiz-answer"
+                 placeholder="Deine Antwort..."
+                 autocomplete="off" autocapitalize="none" spellcheck="false"
+                 onkeydown="App.handleQuizKeydown(event)">
+        </div>
+
+        <button class="quiz-submit-btn" id="quiz-submit" onclick="App.submitQuiz()">
+          Prüfen
+        </button>
+
+        <div class="quiz-feedback hidden" id="quiz-feedback"></div>
+      </div>
+    </div>
+
+    <!-- ==================== RESULTS ==================== -->
+    <div id="view-results" class="view">
+      <div class="header">
+        <button class="back-btn" onclick="App.goHome()">← Zurück</button>
+      </div>
+      <div class="results-container">
+        <div class="results-emoji" id="results-emoji">🏆</div>
+        <div class="results-title" id="results-title">Super gemacht!</div>
+        <div class="results-subtitle" id="results-subtitle">8 von 10 richtig</div>
+
+        <div class="results-stats">
+          <div class="results-stat">
+            <div class="results-stat-number correct" id="results-correct-count">8</div>
+            <div class="results-stat-label">Richtig</div>
+          </div>
+          <div class="results-stat">
+            <div class="results-stat-number wrong" id="results-wrong-count">2</div>
+            <div class="results-stat-label">Falsch</div>
+          </div>
+        </div>
+
+        <div class="results-words" id="results-words-section">
+          <h3>Diese Wörter noch üben:</h3>
+          <div id="results-word-list"></div>
+        </div>
+
+        <div class="results-actions">
+          <button class="btn-primary" onclick="App.retryQuiz()">🔄 Nochmal üben</button>
+          <button class="btn-secondary" onclick="App.goHome()">← Zur Übersicht</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="dataService.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

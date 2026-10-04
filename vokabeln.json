@@ -1,0 +1,36 @@
+{
+  "weeks": [
+    {
+      "week": 1,
+      "label": "Tiere",
+      "words": [
+        { "de": "Hund", "en": "dog" },
+        { "de": "Katze", "en": "cat" },
+        { "de": "Vogel", "en": "bird" },
+        { "de": "Fisch", "en": "fish" },
+        { "de": "Pferd", "en": "horse" },
+        { "de": "Maus", "en": "mouse" },
+        { "de": "Kuh", "en": "cow" },
+        { "de": "Schwein", "en": "pig" },
+        { "de": "Schaf", "en": "sheep" },
+        { "de": "Huhn", "en": "chicken" }
+      ]
+    },
+    {
+      "week": 2,
+      "label": "Farben",
+      "words": [
+        { "de": "rot", "en": "red" },
+        { "de": "blau", "en": "blue" },
+        { "de": "grün", "en": "green" },
+        { "de": "gelb", "en": "yellow" },
+        { "de": "schwarz", "en": "black" },
+        { "de": "weiß", "en": "white" },
+        { "de": "orange", "en": "orange" },
+        { "de": "lila", "en": "purple" },
+        { "de": "rosa", "en": "pink" },
+        { "de": "braun", "en": "brown" }
+      ]
+    }
+  ]
+}
