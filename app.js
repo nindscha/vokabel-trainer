@@ -212,6 +212,43 @@ const App = (() => {
     document.getElementById('quiz-submit').textContent = 'Prüfen';
   }
 
+  function normalizeText(text) {
+    if (!text) return '';
+    return text
+      .toLowerCase()
+      .trim()
+      .replace(/ß/g, 'ss')
+      .replace(/[.,/#!$%^&*;:{}=\-_`~()?"'„“”]/g, '')
+      .replace(/\s+/g, ' ');
+  }
+
+  function getAcceptedVariants(target) {
+    const parts = target.split(/[,;/]/).map(s => s.trim()).filter(Boolean);
+    const variants = new Set();
+
+    const full = normalizeText(target);
+    if (full) variants.add(full);
+
+    parts.forEach(part => {
+      const normPart = normalizeText(part);
+      if (normPart) variants.add(normPart);
+
+      const withParens = normalizeText(part.replace(/\((.*?)\)/g, '$1'));
+      const withoutParens = normalizeText(part.replace(/\(.*?\)/g, ''));
+      if (withParens) variants.add(withParens);
+      if (withoutParens) variants.add(withoutParens);
+    });
+
+    return Array.from(variants).filter(v => v.length > 0);
+  }
+
+  function checkAnswer(userAnswer, target) {
+    const normUser = normalizeText(userAnswer);
+    if (!normUser) return false;
+    const variants = getAcceptedVariants(target);
+    return variants.includes(normUser);
+  }
+
   function submitQuiz() {
     const word = currentWords[currentIndex];
     const input = document.getElementById('quiz-answer');
@@ -219,13 +256,8 @@ const App = (() => {
     const btn = document.getElementById('quiz-submit');
 
     if (quizState === 'input') {
-      // Check answer
-      const userAnswer = input.value.trim().toLowerCase();
-      const correctAnswer = direction === 'de-en'
-        ? word.en.toLowerCase()
-        : word.de.toLowerCase();
-
-      const isCorrect = userAnswer === correctAnswer;
+      const rawTarget = direction === 'de-en' ? word.en : word.de;
+      const isCorrect = checkAnswer(input.value, rawTarget);
 
       input.classList.add(isCorrect ? 'correct' : 'wrong');
       input.disabled = true;
@@ -233,8 +265,8 @@ const App = (() => {
       feedback.classList.remove('hidden', 'correct', 'wrong');
       feedback.classList.add(isCorrect ? 'correct' : 'wrong');
       feedback.textContent = isCorrect
-        ? '✅ Richtig!'
-        : `❌ Richtig wäre: ${direction === 'de-en' ? word.en : word.de}`;
+        ? `✅ Richtig! (${rawTarget})`
+        : `❌ Richtig wäre: ${rawTarget}`;
 
       DataService.saveWordResult(currentWeek, word.en, isCorrect);
       quizResults.push({ word, correct: isCorrect });
