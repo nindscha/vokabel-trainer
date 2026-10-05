@@ -1,32 +1,91 @@
-// dataService.js – Phase 1: JSON + LocalStorage
-// Dieses Modul ist bewusst austauschbar für Phase 2 (Supabase)
+// dataService.js – Phase 2: Supabase Anbindung mit lokalem Offline-Fallback
 
 const DataService = (() => {
-  let cachedData = null;
+  const SUPABASE_URL = 'https://fhkojiwbcdhkgpozltqp.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_FiZZwcCmXDF5Vl7sPP_VYA_1HF86lVc';
 
-  async function loadData() {
-    if (cachedData) return cachedData;
-    // Cache-Buster verhindert 10-Minuten HTTP-Caching auf GitHub Pages / Mobilgeräten
-    const res = await fetch('vokabeln.json?t=' + Date.now(), { cache: 'no-cache' });
-    cachedData = await res.json();
-    return cachedData;
+  let supabase = null;
+  if (typeof window !== 'undefined' && window.supabase && typeof window.supabase.createClient === 'function') {
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   }
 
-  // Alle Wochen laden (für die Übersicht)
+  let cachedWeeks = null;
+  const cachedWordsByWeek = {};
+
+  // Lokale JSON-Datei als Fallback laden
+  async function loadLocalJson() {
+    try {
+      const res = await fetch('vokabeln.json?t=' + Date.now(), { cache: 'no-cache' });
+      return await res.json();
+    } catch (e) {
+      return { weeks: [] };
+    }
+  }
+
+  // Alle Wochen laden (Supabase zuerst, Fallback auf JSON)
   async function getWeeks() {
-    const data = await loadData();
-    return data.weeks.map(w => ({
+    if (cachedWeeks) return cachedWeeks;
+
+    if (supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('words')
+          .select('week, week_label')
+          .order('week', { ascending: true });
+
+        if (!error && data && data.length > 0) {
+          const map = {};
+          data.forEach(row => {
+            if (!map[row.week]) {
+              map[row.week] = { week: row.week, label: row.week_label, wordCount: 0 };
+            }
+            map[row.week].wordCount++;
+          });
+          cachedWeeks = Object.values(map);
+          return cachedWeeks;
+        }
+      } catch (err) {
+        console.warn('Supabase getWeeks error, using local fallback:', err);
+      }
+    }
+
+    // Fallback: vokabeln.json
+    const localData = await loadLocalJson();
+    cachedWeeks = localData.weeks.map(w => ({
       week: w.week,
       label: w.label,
       wordCount: w.words.length
     }));
+    return cachedWeeks;
   }
 
   // Vokabeln einer bestimmten Woche laden
   async function getWords(week) {
-    const data = await loadData();
-    const found = data.weeks.find(w => w.week === week);
-    return found ? found.words : [];
+    if (cachedWordsByWeek[week]) return cachedWordsByWeek[week];
+
+    if (supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('words')
+          .select('en, de')
+          .eq('week', week)
+          .order('id', { ascending: true });
+
+        if (!error && data && data.length > 0) {
+          cachedWordsByWeek[week] = data;
+          return data;
+        }
+      } catch (err) {
+        console.warn('Supabase getWords error, using local fallback:', err);
+      }
+    }
+
+    // Fallback: vokabeln.json
+    const localData = await loadLocalJson();
+    const found = localData.weeks.find(w => w.week === week);
+    const words = found ? found.words : [];
+    cachedWordsByWeek[week] = words;
+    return words;
   }
 
   // Fortschritt einer Woche laden
@@ -35,8 +94,9 @@ const DataService = (() => {
     return all[`week_${week}`] || {};
   }
 
-  // Fortschritt für ein einzelnes Wort speichern
-  function saveWordResult(week, word, correct) {
+  // Fortschritt für ein einzelnes Wort speichern (lokal + Supabase Cloud-Sync)
+  async function saveWordResult(week, word, correct) {
+    // 1. Sofort lokal speichern (für schnelle UI)
     const all = JSON.parse(localStorage.getItem('vokabel_progress') || '{}');
     const key = `week_${week}`;
     if (!all[key]) all[key] = {};
@@ -48,11 +108,27 @@ const DataService = (() => {
       all[key][word].wrong++;
     }
     all[key][word].lastPracticed = new Date().toISOString().split('T')[0];
-
     localStorage.setItem('vokabel_progress', JSON.stringify(all));
+
+    // 2. Im Hintergrund in Supabase synchronisieren
+    if (supabase) {
+      try {
+        const currentEntry = all[key][word];
+        await supabase.from('progress').upsert({
+          child_name: 'Kind',
+          week: week,
+          word_en: word,
+          correct: currentEntry.correct,
+          wrong: currentEntry.wrong,
+          last_practiced: currentEntry.lastPracticed
+        }, { onConflict: 'child_name,week,word_en' });
+      } catch (err) {
+        console.warn('Cloud sync to Supabase failed:', err);
+      }
+    }
   }
 
-  // Statistik für eine Woche berechnen
+  // Statistik für eine Woche
   function getWeekStats(week) {
     const progress = getProgress(week);
     const entries = Object.values(progress);
