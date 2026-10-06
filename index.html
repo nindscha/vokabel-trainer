@@ -163,8 +163,15 @@
         </div>
 
         <div class="results-actions">
-          <button class="btn-primary" onclick="App.retryQuiz()">🔄 Nochmal üben</button>
-          <button class="btn-secondary" onclick="App.goHome()">← Zur Übersicht</button>
+          <button class="btn-accent hidden" id="btn-retry-wrong" onclick="App.retryWrongWords()">
+            🎯 Nur die falschen wiederholen
+          </button>
+          <button class="btn-primary" id="btn-retry-all" onclick="App.retryAllWords()">
+            🔄 Alle Wörter wiederholen
+          </button>
+          <button class="btn-secondary" onclick="App.goHome()">
+            ← Zur Übersicht
+          </button>
         </div>
       </div>
     </div>

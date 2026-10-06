@@ -597,6 +597,24 @@ body {
   gap: 10px;
 }
 
+.btn-accent {
+  width: 100%;
+  padding: 16px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: linear-gradient(135deg, #ed8936, #dd6b20);
+  color: white;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform var(--transition);
+  box-shadow: 0 4px 14px rgba(237, 137, 54, 0.35);
+}
+
+.btn-accent:active {
+  transform: scale(0.97);
+}
+
 .btn-primary {
   width: 100%;
   padding: 16px;

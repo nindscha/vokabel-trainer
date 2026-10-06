@@ -3,10 +3,12 @@
 const App = (() => {
   // State
   let currentWeek = null;
-  let currentWords = [];
+  let weekAllWords = []; // Alle Vokabeln der ausgewählten Woche
+  let currentWords = []; // Aktuell zu übende Vokabeln (evtl. nur falsche)
   let currentIndex = 0;
   let direction = 'de-en'; // 'de-en' oder 'en-de'
-  let quizResults = [];
+  let currentMode = 'quiz'; // 'quiz' | 'flashcard'
+  let sessionResults = []; // [{ word, correct }]
   let isFlipped = false;
   let isAnimating = false;
   let quizState = 'input'; // 'input' | 'feedback'
@@ -79,7 +81,8 @@ const App = (() => {
   // ---------- Week Selection → Mode ----------
   async function selectWeek(week) {
     currentWeek = week;
-    currentWords = await DataService.getWords(week);
+    weekAllWords = await DataService.getWords(week);
+    currentWords = [...weekAllWords];
 
     const weeks = await DataService.getWeeks();
     const weekInfo = weeks.find(w => w.week === week);
@@ -87,7 +90,7 @@ const App = (() => {
     document.getElementById('mode-title').textContent =
       `Woche ${week} – ${weekInfo?.label || ''}`;
     document.getElementById('mode-word-count').textContent =
-      `${currentWords.length} Vokabeln`;
+      `${weekAllWords.length} Vokabeln`;
 
     showView('mode');
   }
@@ -101,9 +104,13 @@ const App = (() => {
   }
 
   // ---------- Flashcard Mode ----------
-  function startFlashcards() {
+  function startFlashcards(wordsToUse) {
+    currentMode = 'flashcard';
+    currentWords = wordsToUse ? [...wordsToUse] : [...weekAllWords];
     currentIndex = 0;
+    sessionResults = [];
     isFlipped = false;
+    isAnimating = false;
     shuffleWords();
     renderFlashcard();
     showView('flashcard');
@@ -111,7 +118,7 @@ const App = (() => {
 
   function renderFlashcard() {
     if (currentIndex >= currentWords.length) {
-      goHome();
+      showResults();
       return;
     }
 
@@ -167,14 +174,17 @@ const App = (() => {
     const word = currentWords[currentIndex];
     const en = word.en;
     DataService.saveWordResult(currentWeek, en, knew);
+    sessionResults.push({ word, correct: knew });
     currentIndex++;
     renderFlashcard();
   }
 
   // ---------- Quiz Mode ----------
-  function startQuiz() {
+  function startQuiz(wordsToUse) {
+    currentMode = 'quiz';
+    currentWords = wordsToUse ? [...wordsToUse] : [...weekAllWords];
     currentIndex = 0;
-    quizResults = [];
+    sessionResults = [];
     shuffleWords();
     renderQuiz();
     showView('quiz');
@@ -269,7 +279,7 @@ const App = (() => {
         : `❌ Richtig wäre: ${rawTarget}`;
 
       DataService.saveWordResult(currentWeek, word.en, isCorrect);
-      quizResults.push({ word, correct: isCorrect });
+      sessionResults.push({ word, correct: isCorrect });
 
       btn.textContent = currentIndex < currentWords.length - 1 ? 'Weiter' : 'Ergebnis';
       quizState = 'feedback';
@@ -288,41 +298,92 @@ const App = (() => {
 
   // ---------- Results View ----------
   function showResults() {
-    const correct = quizResults.filter(r => r.correct).length;
-    const wrong = quizResults.length - correct;
-    const pct = Math.round((correct / quizResults.length) * 100);
+    const correct = sessionResults.filter(r => r.correct).length;
+    const wrong = sessionResults.length - correct;
+    const pct = sessionResults.length > 0
+      ? Math.round((correct / sessionResults.length) * 100)
+      : 0;
 
+    const isRetryRound = currentWords.length < weekAllWords.length;
     let emoji, title;
-    if (pct === 100) { emoji = '🏆'; title = 'Perfekt!'; }
-    else if (pct >= 80) { emoji = '🌟'; title = 'Super gemacht!'; }
-    else if (pct >= 60) { emoji = '👍'; title = 'Gut gemacht!'; }
-    else if (pct >= 40) { emoji = '💪'; title = 'Weiter üben!'; }
-    else { emoji = '📖'; title = 'Übung macht den Meister!'; }
 
+    if (pct === 100) {
+      emoji = '🏆';
+      title = isRetryRound ? 'Alle Fehler gemeistert!' : 'Perfekt!';
+    } else if (pct >= 80) {
+      emoji = '🌟';
+      title = 'Super gemacht!';
+    } else if (pct >= 60) {
+      emoji = '👍';
+      title = 'Gut gemacht!';
+    } else if (pct >= 40) {
+      emoji = '💪';
+      title = 'Weiter üben!';
+    } else {
+      emoji = '📖';
+      title = 'Übung macht den Meister!';
+    }
+
+    const modeName = currentMode === 'flashcard' ? 'Karteikarten' : 'Quiz';
     document.getElementById('results-emoji').textContent = emoji;
     document.getElementById('results-title').textContent = title;
     document.getElementById('results-subtitle').textContent =
-      `${correct} von ${quizResults.length} richtig (${pct}%)`;
+      `${correct} von ${sessionResults.length} richtig (${pct}%) • ${modeName}`;
     document.getElementById('results-correct-count').textContent = correct;
     document.getElementById('results-wrong-count').textContent = wrong;
 
     // Word list
-    const wrongWords = quizResults.filter(r => !r.correct);
+    const wrongWords = sessionResults.filter(r => !r.correct).map(r => r.word);
     const wordList = document.getElementById('results-word-list');
+    const btnRetryWrong = document.getElementById('btn-retry-wrong');
+    const btnRetryAll = document.getElementById('btn-retry-all');
 
     if (wrongWords.length > 0) {
       document.getElementById('results-words-section').classList.remove('hidden');
-      wordList.innerHTML = wrongWords.map(r => `
+      wordList.innerHTML = wrongWords.map(w => `
         <div class="results-word-item">
           <span class="results-word-icon">❌</span>
-          <span>${r.word.de} → ${r.word.en}</span>
+          <span>${w.de} → ${w.en}</span>
         </div>
       `).join('');
+
+      if (btnRetryWrong) {
+        btnRetryWrong.classList.remove('hidden');
+        btnRetryWrong.textContent = `🎯 Nur die falschen wiederholen (${wrongWords.length} ${wrongWords.length === 1 ? 'Wort' : 'Wörter'})`;
+      }
+      if (btnRetryAll) {
+        btnRetryAll.textContent = '🔄 Alle Wörter wiederholen';
+      }
     } else {
       document.getElementById('results-words-section').classList.add('hidden');
+      if (btnRetryWrong) {
+        btnRetryWrong.classList.add('hidden');
+      }
+      if (btnRetryAll) {
+        btnRetryAll.textContent = '🔄 Alle Wörter nochmal üben';
+      }
     }
 
     showView('results');
+  }
+
+  function retryWrongWords() {
+    const wrongWords = sessionResults.filter(r => !r.correct).map(r => r.word);
+    if (wrongWords.length === 0) return;
+
+    if (currentMode === 'flashcard') {
+      startFlashcards(wrongWords);
+    } else {
+      startQuiz(wrongWords);
+    }
+  }
+
+  function retryAllWords() {
+    if (currentMode === 'flashcard') {
+      startFlashcards(weekAllWords);
+    } else {
+      startQuiz(weekAllWords);
+    }
   }
 
   // ---------- Helpers ----------
@@ -336,8 +397,10 @@ const App = (() => {
 
   function goHome() {
     currentWeek = null;
+    weekAllWords = [];
     currentWords = [];
     currentIndex = 0;
+    sessionResults = [];
     renderHome();
   }
 
@@ -373,7 +436,9 @@ const App = (() => {
     submitQuiz,
     handleQuizKeydown,
     goHome,
-    retryQuiz: startQuiz
+    retryWrongWords,
+    retryAllWords,
+    retryQuiz: retryAllWords
   };
 })();
 
