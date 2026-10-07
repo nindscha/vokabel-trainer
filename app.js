@@ -11,6 +11,7 @@ const App = (() => {
   let sessionResults = []; // [{ word, correct }]
   let isFlipped = false;
   let isAnimating = false;
+  let flashcardResetTimer = null;
   let quizState = 'input'; // 'input' | 'feedback'
 
   // DOM Elements
@@ -105,6 +106,9 @@ const App = (() => {
 
   // ---------- Flashcard Mode ----------
   function startFlashcards(wordsToUse) {
+    clearTimeout(flashcardResetTimer);
+    flashcardResetTimer = null;
+    document.getElementById('flashcard').classList.remove('flipped');
     currentMode = 'flashcard';
     currentWords = wordsToUse ? [...wordsToUse] : [...weekAllWords];
     currentIndex = 0;
@@ -151,7 +155,11 @@ const App = (() => {
       isAnimating = true;
       card.classList.remove('flipped');
       isFlipped = false;
-      setTimeout(updateContent, 500); // warten bis Flip-Animation fertig
+      clearTimeout(flashcardResetTimer);
+      flashcardResetTimer = setTimeout(() => {
+        flashcardResetTimer = null;
+        updateContent();
+      }, 500); // warten bis Flip-Animation fertig
     } else {
       updateContent();
     }

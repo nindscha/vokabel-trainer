@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vokabel-trainer-v5';
+const CACHE_NAME = 'vokabel-trainer-v6';
 const ASSETS = [
   './',
   './index.html',
@@ -8,6 +8,9 @@ const ASSETS = [
   './vokabeln.json',
   './manifest.json'
 ];
+const ASSET_PATHS = new Set(
+  ASSETS.map(asset => new URL(asset, self.registration.scope).pathname)
+);
 
 // Bei Installation alle Dateien cachen
 self.addEventListener('install', event => {
@@ -29,27 +32,29 @@ self.addEventListener('activate', event => {
 
 // Network-first, Fallback auf Cache
 self.addEventListener('fetch', event => {
-  // vokabeln.json immer frisch laden
-  if (event.request.url.includes('vokabeln.json')) {
-    event.respondWith(
-      fetch(event.request)
-        .then(response => {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put('./vokabeln.json', clone));
-          return response;
-        })
-        .catch(() => caches.match('./vokabeln.json'))
-    );
-    return;
-  }
+  const requestUrl = new URL(event.request.url);
+  if (
+    event.request.method !== 'GET' ||
+    requestUrl.origin !== self.location.origin ||
+    !ASSET_PATHS.has(requestUrl.pathname)
+  ) return;
 
   event.respondWith(
-    fetch(event.request)
-      .then(response => {
-        const clone = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+    (async () => {
+      const cache = await caches.open(CACHE_NAME);
+      const cacheKey = new Request(`${requestUrl.origin}${requestUrl.pathname}`);
+
+      try {
+        const response = await fetch(event.request);
+        if (response.ok) {
+          await cache.put(cacheKey, response.clone());
+        }
         return response;
-      })
-      .catch(() => caches.match(event.request))
+      } catch (error) {
+        const cachedResponse = await cache.match(cacheKey);
+        if (cachedResponse) return cachedResponse;
+        throw error;
+      }
+    })()
   );
 });
