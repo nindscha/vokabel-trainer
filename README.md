@@ -21,7 +21,7 @@ Dann http://localhost:8000 öffnen. Nach Änderungen an Assets den Service Worke
 
 ## Supabase einrichten
 1. Projekt anlegen, URL und Publishable Key in [supabaseClient.js](supabaseClient.js) eintragen (öffentlich, die Daten schützt RLS).
-2. `seed_words.sql` ausführen (Tabelle `words`, falls nicht vorhanden), dann `family_schema.sql` (Familien, Policies, Funktionen). Das Skript ersetzt alle Policies auf `progress`.
+2. Tabellen `words` (week, week_label, en, de) und `progress` (child_name, week, word_en, correct, wrong, last_practiced) anlegen und `words` mit `seed_words.sql` füllen. Danach `family_schema.sql` (Familien, Policies, Funktionen). Das Skript ersetzt alle Policies auf `progress`.
 3. Dashboard → Authentication → Sign In / Providers: **Allow anonymous sign-ins** aktivieren.
 4. Eltern unter Authentication → Users → Add user anlegen (Auto Confirm User).
 
