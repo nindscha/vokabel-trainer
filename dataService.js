@@ -183,15 +183,7 @@ const DataService = (() => {
 
   // Statistik für eine Woche
   function getWeekStats(week) {
-    const progress = getProgress(week);
-    const entries = Object.values(progress);
-    if (entries.length === 0) return { practiced: 0, totalCorrect: 0, totalWrong: 0 };
-
-    return {
-      practiced: entries.length,
-      totalCorrect: entries.reduce((sum, e) => sum + e.correct, 0),
-      totalWrong: entries.reduce((sum, e) => sum + e.wrong, 0)
-    };
+    return { practiced: Object.keys(getProgress(week)).length };
   }
 
   // Gesamtstatistik

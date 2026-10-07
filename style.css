@@ -138,6 +138,17 @@ body {
   align-items: center;
   gap: 16px;
   border: 2px solid transparent;
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+}
+
+.week-card:focus-visible,
+.mode-card:focus-visible,
+.flashcard:focus-visible {
+  outline: 3px solid var(--primary, #4a90d9);
+  outline-offset: 2px;
 }
 
 .week-card:hover {

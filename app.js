@@ -27,6 +27,13 @@ const App = (() => {
   };
 
   // ---------- Navigation ----------
+  function el(tag, className, ...children) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    node.append(...children);
+    return node;
+  }
+
   function showView(name) {
     Object.values(views).forEach(v => v.classList.remove('active'));
     views[name].classList.add('active');
@@ -45,12 +52,11 @@ const App = (() => {
     const child = AuthService.getChild();
     document.getElementById('account-btn').textContent = child ? `👤 ${child.name}` : '👤';
 
+    weekList.replaceChildren();
     if (weeks.length === 0) {
-      weekList.innerHTML = `
-        <div class="empty-state">
-          <div class="empty-state-icon">📭</div>
-          <p>Noch keine Vokabeln vorhanden.</p>
-        </div>`;
+      weekList.append(el('div', 'empty-state',
+        el('div', 'empty-state-icon', '📭'),
+        el('p', null, 'Noch keine Vokabeln vorhanden.')));
       showView('home');
       return;
     }
@@ -58,28 +64,26 @@ const App = (() => {
     const weekIcons = ['🐾', '🎨', '🍎', '🏠', '👨‍👩‍👧‍👦', '🌍', '📚', '⭐', '🎵', '🌈',
                        '🚗', '🍕', '⚽', '🌸', '🎮', '🧩', '🎯', '🎪', '🌊', '🦋'];
 
-    weekList.innerHTML = weeks.map((w, i) => {
+    weeks.forEach((w, i) => {
       const weekStats = DataService.getWeekStats(w.week);
       const pct = w.wordCount > 0
         ? Math.round((weekStats.practiced / w.wordCount) * 100)
         : 0;
-      const icon = weekIcons[i % weekIcons.length];
 
-      return `
-        <div class="week-card" onclick="App.selectWeek(${w.week})">
-          <div class="week-card-icon">${icon}</div>
-          <div class="week-card-content">
-            <div class="week-card-title">Woche ${w.week} – ${w.label}</div>
-            <div class="week-card-subtitle">${w.wordCount} Vokabeln</div>
-            <div class="progress-bar-bg">
-              <div class="progress-bar-fill" style="width: ${pct}%"></div>
-            </div>
-          </div>
-          <div class="week-card-progress">
-            <div class="week-card-progress-ring">${pct}%</div>
-          </div>
-        </div>`;
-    }).join('');
+      const fill = el('div', 'progress-bar-fill');
+      fill.style.width = `${pct}%`;
+      const card = el('button', 'week-card',
+        el('div', 'week-card-icon', weekIcons[i % weekIcons.length]),
+        el('div', 'week-card-content',
+          el('div', 'week-card-title', `Woche ${w.week} – ${w.label}`),
+          el('div', 'week-card-subtitle', `${w.wordCount} Vokabeln`),
+          el('div', 'progress-bar-bg', fill)),
+        el('div', 'week-card-progress',
+          el('div', 'week-card-progress-ring', `${pct}%`)));
+      card.type = 'button';
+      card.addEventListener('click', () => selectWeek(w.week));
+      weekList.append(card);
+    });
 
     showView('home');
   }
@@ -353,12 +357,10 @@ const App = (() => {
 
     if (wrongWords.length > 0) {
       document.getElementById('results-words-section').classList.remove('hidden');
-      wordList.innerHTML = wrongWords.map(w => `
-        <div class="results-word-item">
-          <span class="results-word-icon">❌</span>
-          <span>${w.de} → ${w.en}</span>
-        </div>
-      `).join('');
+      wordList.replaceChildren(...wrongWords.map(w =>
+        el('div', 'results-word-item',
+          el('span', 'results-word-icon', '❌'),
+          el('span', null, `${w.de} → ${w.en}`))));
 
       if (btnRetryWrong) {
         btnRetryWrong.classList.remove('hidden');
@@ -419,6 +421,14 @@ const App = (() => {
 
   // ---------- Init ----------
   function init() {
+    document.addEventListener('keydown', event => {
+      const target = event.target;
+      if ((event.key === 'Enter' || event.key === ' ') &&
+          target.getAttribute && target.getAttribute('role') === 'button') {
+        event.preventDefault();
+        target.click();
+      }
+    });
     const child = AuthService.getChild();
     if (child) {
       DataService.syncChildProgress(child.id).then(renderHome);
@@ -455,8 +465,7 @@ const App = (() => {
     handleQuizKeydown,
     goHome,
     retryWrongWords,
-    retryAllWords,
-    retryQuiz: retryAllWords
+    retryAllWords
   };
 })();
 
