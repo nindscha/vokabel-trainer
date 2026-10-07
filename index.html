@@ -49,14 +49,14 @@
         </div>
 
         <div class="mode-cards">
-          <div class="mode-card" onclick="App.startFlashcards()">
+          <div class="mode-card" onclick="App.startFlashcards()" role="button" tabindex="0">
             <div class="mode-card-icon">🃏</div>
             <div>
               <h3>Karteikarten</h3>
               <p>Tippe zum Aufdecken, bewerte dich selbst</p>
             </div>
           </div>
-          <div class="mode-card" onclick="App.startQuiz()">
+          <div class="mode-card" onclick="App.startQuiz()" role="button" tabindex="0">
             <div class="mode-card-icon">✍️</div>
             <div>
               <h3>Quiz</h3>
@@ -75,7 +75,7 @@
       <div class="flashcard-container">
         <div class="flashcard-progress-text" id="flashcard-counter">1 / 10</div>
 
-        <div class="flashcard" id="flashcard" onclick="App.flipCard()">
+        <div class="flashcard" id="flashcard" onclick="App.flipCard()" role="button" tabindex="0">
           <div class="flashcard-inner">
             <div class="flashcard-front">
               <div class="flashcard-label" id="fc-front-label">Deutsch</div>
