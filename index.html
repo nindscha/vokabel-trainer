@@ -19,7 +19,11 @@
     <div id="view-home" class="view active">
       <div class="header">
         <h1>📚 Vokabel-Trainer</h1>
-        <div class="header-stats" id="total-score">🔥 0</div>
+        <div class="header-actions">
+          <div class="header-stats" id="total-score">🔥 0</div>
+          <button class="header-stats account-btn" id="account-btn"
+                  onclick="Family.open()" aria-label="Konto und Familie">👤</button>
+        </div>
       </div>
       <div id="week-list" class="week-list">
         <!-- Dynamisch befüllt -->
@@ -176,10 +180,42 @@
       </div>
     </div>
 
+    <!-- ==================== ACCOUNT / FAMILIE ==================== -->
+    <div id="view-account" class="view">
+      <div class="header">
+        <button class="back-btn" onclick="App.goHome()">← Zurück</button>
+      </div>
+      <h2 class="page-title">Konto</h2>
+      <div class="form-message hidden" role="alert"></div>
+      <div id="account-content" class="stack"></div>
+    </div>
+
+    <div id="view-family" class="view">
+      <div class="header">
+        <button class="back-btn" onclick="Family.open()">← Zurück</button>
+      </div>
+      <h2 class="page-title" id="family-title">Familie</h2>
+      <div class="form-message hidden" role="alert"></div>
+      <div id="family-content" class="stack"></div>
+    </div>
+
+    <div id="view-progress" class="view">
+      <div class="header">
+        <button class="back-btn" id="progress-back">← Zurück</button>
+      </div>
+      <h2 class="page-title" id="progress-title">Fortschritt</h2>
+      <div class="form-message hidden" role="alert"></div>
+      <div id="progress-content" class="stack"></div>
+    </div>
+
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabaseClient.js"></script>
+  <script src="authService.js"></script>
   <script src="dataService.js"></script>
+  <script src="familyService.js"></script>
+  <script src="family.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

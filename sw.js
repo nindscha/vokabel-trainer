@@ -1,10 +1,14 @@
-const CACHE_NAME = 'vokabel-trainer-v6';
+const CACHE_NAME = 'vokabel-trainer-v7';
 const ASSETS = [
   './',
   './index.html',
   './style.css',
   './app.js',
+  './supabaseClient.js',
+  './authService.js',
   './dataService.js',
+  './familyService.js',
+  './family.js',
   './vokabeln.json',
   './manifest.json'
 ];

@@ -20,7 +20,10 @@ const App = (() => {
     mode: document.getElementById('view-mode'),
     flashcard: document.getElementById('view-flashcard'),
     quiz: document.getElementById('view-quiz'),
-    results: document.getElementById('view-results')
+    results: document.getElementById('view-results'),
+    account: document.getElementById('view-account'),
+    family: document.getElementById('view-family'),
+    progress: document.getElementById('view-progress')
   };
 
   // ---------- Navigation ----------
@@ -39,6 +42,8 @@ const App = (() => {
     // Header stats
     document.getElementById('total-score').textContent =
       `🔥 ${stats.totalCorrect}`;
+    const child = AuthService.getChild();
+    document.getElementById('account-btn').textContent = child ? `👤 ${child.name}` : '👤';
 
     if (weeks.length === 0) {
       weekList.innerHTML = `
@@ -414,6 +419,10 @@ const App = (() => {
 
   // ---------- Init ----------
   function init() {
+    const child = AuthService.getChild();
+    if (child) {
+      DataService.syncChildProgress(child.id).then(renderHome);
+    }
     renderHome();
 
     // Register Service Worker with auto-update
@@ -435,6 +444,7 @@ const App = (() => {
   // Public API
   return {
     init,
+    showView,
     selectWeek,
     setDirection,
     startFlashcards,
