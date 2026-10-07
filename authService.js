@@ -11,7 +11,6 @@ const AuthService = (() => {
   function friendlyError(error) {
     const msg = (error && error.message) || 'Unbekannter Fehler';
     if (/invalid login credentials/i.test(msg)) return 'E-Mail oder Passwort ist falsch.';
-    if (/already registered/i.test(msg)) return 'Diese E-Mail ist bereits registriert.';
     if (/email not confirmed/i.test(msg)) return 'Bitte bestätige zuerst deine E-Mail-Adresse.';
     if (/failed to fetch|network/i.test(msg)) return 'Keine Internetverbindung.';
     return msg;
@@ -55,14 +54,6 @@ const AuthService = (() => {
     if (error) throw new Error(friendlyError(error));
   }
 
-  // Gibt { needsConfirmation } zurück
-  async function signUpParent(email, password) {
-    localStorage.removeItem(CHILD_KEY);
-    const { data, error } = await client.auth.signUp({ email, password });
-    if (error) throw new Error(friendlyError(error));
-    return { needsConfirmation: !data.session };
-  }
-
   async function joinAsChild(code, name) {
     await signOut();
 
@@ -92,7 +83,6 @@ const AuthService = (() => {
     getUser,
     signOut,
     signInParent,
-    signUpParent,
     joinAsChild
   };
 })();

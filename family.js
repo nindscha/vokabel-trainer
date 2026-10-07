@@ -107,12 +107,10 @@ const Family = (() => {
       class: 'text-input', type: 'password', name: 'password', required: true,
       minlength: 8, autocomplete: 'current-password'
     });
-    const signUpButton = h('button', { class: 'btn-secondary', type: 'button' }, 'Konto erstellen');
     const parentForm = h('form', { class: 'stack' },
       field('E-Mail', email),
       field('Passwort (mind. 8 Zeichen)', password),
-      h('button', { class: 'btn-primary', type: 'submit' }, 'Anmelden'),
-      signUpButton
+      h('button', { class: 'btn-primary', type: 'submit' }, 'Anmelden')
     );
     parentForm.addEventListener('submit', event => {
       event.preventDefault();
@@ -121,18 +119,6 @@ const Family = (() => {
         await open();
       });
     });
-    signUpButton.addEventListener('click', () => {
-      if (!parentForm.reportValidity()) return;
-      run(signUpButton, async () => {
-        const result = await AuthService.signUpParent(email.value.trim(), password.value);
-        if (result.needsConfirmation) {
-          setMessage('Fast geschafft: Bitte bestätige deine E-Mail und melde dich dann an.', 'info');
-        } else {
-          await open();
-        }
-      });
-    });
-
     root.append(
       card('👧 Ich bin ein Kind',
         h('p', { class: 'muted' }, 'Den Familiencode bekommst du von deinen Eltern.'),
