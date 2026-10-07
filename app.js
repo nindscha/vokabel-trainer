@@ -11,6 +11,7 @@ const App = (() => {
   let sessionResults = []; // [{ word, correct }]
   let isFlipped = false;
   let isAnimating = false;
+  let flashcardResetTimer = null;
   let quizState = 'input'; // 'input' | 'feedback'
 
   // DOM Elements
@@ -19,7 +20,10 @@ const App = (() => {
     mode: document.getElementById('view-mode'),
     flashcard: document.getElementById('view-flashcard'),
     quiz: document.getElementById('view-quiz'),
-    results: document.getElementById('view-results')
+    results: document.getElementById('view-results'),
+    account: document.getElementById('view-account'),
+    family: document.getElementById('view-family'),
+    progress: document.getElementById('view-progress')
   };
 
   // ---------- Navigation ----------
@@ -38,6 +42,8 @@ const App = (() => {
     // Header stats
     document.getElementById('total-score').textContent =
       `🔥 ${stats.totalCorrect}`;
+    const child = AuthService.getChild();
+    document.getElementById('account-btn').textContent = child ? `👤 ${child.name}` : '👤';
 
     if (weeks.length === 0) {
       weekList.innerHTML = `
@@ -105,6 +111,9 @@ const App = (() => {
 
   // ---------- Flashcard Mode ----------
   function startFlashcards(wordsToUse) {
+    clearTimeout(flashcardResetTimer);
+    flashcardResetTimer = null;
+    document.getElementById('flashcard').classList.remove('flipped');
     currentMode = 'flashcard';
     currentWords = wordsToUse ? [...wordsToUse] : [...weekAllWords];
     currentIndex = 0;
@@ -151,7 +160,11 @@ const App = (() => {
       isAnimating = true;
       card.classList.remove('flipped');
       isFlipped = false;
-      setTimeout(updateContent, 500); // warten bis Flip-Animation fertig
+      clearTimeout(flashcardResetTimer);
+      flashcardResetTimer = setTimeout(() => {
+        flashcardResetTimer = null;
+        updateContent();
+      }, 500); // warten bis Flip-Animation fertig
     } else {
       updateContent();
     }
@@ -406,6 +419,10 @@ const App = (() => {
 
   // ---------- Init ----------
   function init() {
+    const child = AuthService.getChild();
+    if (child) {
+      DataService.syncChildProgress(child.id).then(renderHome);
+    }
     renderHome();
 
     // Register Service Worker with auto-update
@@ -427,6 +444,7 @@ const App = (() => {
   // Public API
   return {
     init,
+    showView,
     selectWeek,
     setDirection,
     startFlashcards,
