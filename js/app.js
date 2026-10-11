@@ -244,43 +244,6 @@ const App = (() => {
     document.getElementById('quiz-submit').textContent = 'Prüfen';
   }
 
-  function normalizeText(text) {
-    if (!text) return '';
-    return text
-      .toLowerCase()
-      .trim()
-      .replace(/ß/g, 'ss')
-      .replace(/[.,/#!$%^&*;:{}=\-_`~()?"'„“”]/g, '')
-      .replace(/\s+/g, ' ');
-  }
-
-  function getAcceptedVariants(target) {
-    const parts = target.split(/[,;/]/).map(s => s.trim()).filter(Boolean);
-    const variants = new Set();
-
-    const full = normalizeText(target);
-    if (full) variants.add(full);
-
-    parts.forEach(part => {
-      const normPart = normalizeText(part);
-      if (normPart) variants.add(normPart);
-
-      const withParens = normalizeText(part.replace(/\((.*?)\)/g, '$1'));
-      const withoutParens = normalizeText(part.replace(/\(.*?\)/g, ''));
-      if (withParens) variants.add(withParens);
-      if (withoutParens) variants.add(withoutParens);
-    });
-
-    return Array.from(variants).filter(v => v.length > 0);
-  }
-
-  function checkAnswer(userAnswer, target) {
-    const normUser = normalizeText(userAnswer);
-    if (!normUser) return false;
-    const variants = getAcceptedVariants(target);
-    return variants.includes(normUser);
-  }
-
   function submitQuiz() {
     const word = currentWords[currentIndex];
     const input = document.getElementById('quiz-answer');
@@ -289,7 +252,7 @@ const App = (() => {
 
     if (quizState === 'input') {
       const rawTarget = direction === 'de-en' ? word.en : word.de;
-      const isCorrect = checkAnswer(input.value, rawTarget);
+      const isCorrect = Logic.checkAnswer(input.value, rawTarget);
 
       input.classList.add(isCorrect ? 'correct' : 'wrong');
       input.disabled = true;
@@ -383,21 +346,9 @@ const App = (() => {
   }
 
   async function buildRecapSelection(count, strategy) {
-    const pool = shuffleArray(await DataService.getAllWords());
-    if (strategy === 'random') return pool.slice(0, count);
-
-    // Zufällige Reihenfolge vor dem Sortieren verteilt Gleichstände fair
-    const keyed = pool.map(word => ({ word, key: recapKey(word, strategy) }));
-    keyed.sort((a, b) => strategy === 'wrong' ? b.key - a.key : a.key - b.key);
-    return keyed.slice(0, count).map(item => item.word);
-  }
-
-  // 'wrong': Anteil falscher Antworten, ungeübt = 1. 'least': Anzahl Übungen, ungeübt = 0.
-  function recapKey(word, strategy) {
-    const { correct = 0, wrong = 0 } = DataService.getProgress(word.week)[word.en] || {};
-    const attempts = correct + wrong;
-    if (strategy === 'wrong') return attempts === 0 ? 1 : wrong / attempts;
-    return attempts;
+    const words = await DataService.getAllWords();
+    return Logic.selectRecapWords(words, count, strategy,
+      word => DataService.getProgress(word.week)[word.en]);
   }
 
   // ---------- Results View ----------
@@ -494,18 +445,8 @@ const App = (() => {
     }
   }
 
-  // ---------- Helpers ----------
-  function shuffleArray(list) {
-    const result = [...list];
-    for (let i = result.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [result[i], result[j]] = [result[j], result[i]];
-    }
-    return result;
-  }
-
   function shuffleWords() {
-    currentWords = shuffleArray(currentWords);
+    currentWords = Logic.shuffleArray(currentWords);
   }
 
   function goHome() {

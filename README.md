@@ -39,6 +39,7 @@ GitHub Pages aus `main`. Arbeit auf `develop`, Übernahme per Pull Request.
 | `js/authService.js` | Anmeldung für Eltern und Kinder |
 | `js/familyService.js` | Supabase-Aufrufe für Familien |
 | `js/dom.js` | Gemeinsamer DOM-Helfer `Dom.h()` |
+| `js/logic.js` | Reine Regeln: Antwortprüfung, Mischen, Wiederholungsauswahl |
 | `js/family.js` | UI für Konto, Familie, Kinder, Fortschritt |
 | `sw.js`, `manifest.json`, `icons/` | PWA und Offline-Cache |
 | `data/vokabeln.json` | Offline-Vokabeln |
