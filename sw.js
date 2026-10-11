@@ -1,15 +1,15 @@
-const CACHE_NAME = 'vokabel-trainer-v11';
+const CACHE_NAME = 'vokabel-trainer-v12';
 const ASSETS = [
   './',
   './index.html',
-  './style.css',
-  './app.js',
-  './supabaseClient.js',
-  './authService.js',
-  './dataService.js',
-  './familyService.js',
-  './family.js',
-  './vokabeln.json',
+  './css/style.css',
+  './js/app.js',
+  './js/supabaseClient.js',
+  './js/authService.js',
+  './js/dataService.js',
+  './js/familyService.js',
+  './js/family.js',
+  './data/vokabeln.json',
   './manifest.json'
 ];
 const ASSET_PATHS = new Set(

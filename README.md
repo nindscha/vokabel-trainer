@@ -21,8 +21,8 @@ python3 -m http.server 8000
 Dann http://localhost:8000 öffnen. Nach Änderungen an Assets den Service Worker neu laden (Dev-Tools → Application → Unregister) oder hart neu laden.
 
 ## Supabase einrichten
-1. Projekt anlegen, URL und Publishable Key in [supabaseClient.js](supabaseClient.js) eintragen (öffentlich, die Daten schützt RLS).
-2. Tabellen `words` (week, en, de) und `progress` (child_name, week, word_en, correct, wrong, last_practiced) anlegen und `words` mit `seed_words.sql` füllen. Danach `family_schema.sql` (Familien, Policies, Funktionen). Das Skript ersetzt alle Policies auf `progress`.
+1. Projekt anlegen, URL und Publishable Key in [js/supabaseClient.js](js/supabaseClient.js) eintragen (öffentlich, die Daten schützt RLS).
+2. Tabellen `words` (week, en, de) und `progress` (child_name, week, word_en, correct, wrong, last_practiced) anlegen und `words` mit [sql/seed_words.sql](sql/seed_words.sql) füllen. Danach [sql/family_schema.sql](sql/family_schema.sql) (Familien, Policies, Funktionen). Das Skript ersetzt alle Policies auf `progress`.
 3. Dashboard → Authentication → Sign In / Providers: **Allow anonymous sign-ins** aktivieren.
 4. Eltern unter Authentication → Users → Add user anlegen (Auto Confirm User).
 
@@ -32,15 +32,15 @@ GitHub Pages aus `main`. Arbeit auf `develop`, Übernahme per Pull Request.
 ## Dateien
 | Datei | Aufgabe |
 |---|---|
-| `index.html`, `style.css` | Markup und Styles aller Ansichten |
-| `app.js` | Hauptlogik: Ansichten, Quiz, Karteikarten, Ergebnisse |
-| `dataService.js` | Vokabeln laden, lokaler und Cloud-Fortschritt |
-| `supabaseClient.js` | Supabase-Client (`Backend.client`) |
-| `authService.js` | Anmeldung für Eltern und Kinder |
-| `familyService.js` | Supabase-Aufrufe für Familien |
-| `family.js` | UI für Konto, Familie, Kinder, Fortschritt |
+| `index.html`, `css/style.css` | Markup und Styles aller Ansichten |
+| `js/app.js` | Hauptlogik: Ansichten, Quiz, Karteikarten, Ergebnisse |
+| `js/dataService.js` | Vokabeln laden, lokaler und Cloud-Fortschritt |
+| `js/supabaseClient.js` | Supabase-Client (`Backend.client`) |
+| `js/authService.js` | Anmeldung für Eltern und Kinder |
+| `js/familyService.js` | Supabase-Aufrufe für Familien |
+| `js/family.js` | UI für Konto, Familie, Kinder, Fortschritt |
 | `sw.js`, `manifest.json`, `icons/` | PWA und Offline-Cache |
-| `vokabeln.json` | Offline-Vokabeln |
-| `family_schema.sql`, `seed_words.sql` | Datenbank |
+| `data/vokabeln.json` | Offline-Vokabeln |
+| `sql/family_schema.sql`, `sql/seed_words.sql` | Datenbank |
 
 Weitere Hinweise für Entwickler und Agenten: [AGENTS.md](AGENTS.md).
