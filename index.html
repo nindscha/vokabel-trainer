@@ -67,6 +67,69 @@
       </div>
     </div>
 
+    <!-- ==================== RECAP (ALLE WOCHEN) ==================== -->
+    <div id="view-recap" class="view">
+      <div class="header">
+        <button class="back-btn" onclick="App.goHome()">← Zurück</button>
+      </div>
+      <div class="mode-selection">
+        <h2>🔁 Wiederholung</h2>
+        <p class="subtitle" id="recap-total">0 Vokabeln</p>
+
+        <div class="form-message error hidden" id="recap-error" role="alert"></div>
+
+        <label class="recap-field">
+          <span>Wie viele Wörter?</span>
+          <input type="number" class="text-input" id="recap-count"
+                 min="1" step="1" inputmode="numeric" value="10">
+        </label>
+
+        <div class="recap-field">
+          <span>Auswahl</span>
+          <div class="recap-strategy">
+            <button class="active" data-strategy="random" aria-pressed="true"
+                    onclick="App.setRecapStrategy('random')">
+              Zufällig
+            </button>
+            <button data-strategy="wrong" aria-pressed="false"
+                    onclick="App.setRecapStrategy('wrong')">
+              Falsch zuerst
+            </button>
+            <button data-strategy="least" aria-pressed="false"
+                    onclick="App.setRecapStrategy('least')">
+              Wenig geübt
+            </button>
+          </div>
+        </div>
+
+        <div class="direction-toggle">
+          <button class="active" data-dir="de-en" onclick="App.setDirection('de-en')">
+            🇩🇪 → 🇬🇧
+          </button>
+          <button data-dir="en-de" onclick="App.setDirection('en-de')">
+            🇬🇧 → 🇩🇪
+          </button>
+        </div>
+
+        <div class="mode-cards">
+          <div class="mode-card" onclick="App.startRecap('flashcard')" role="button" tabindex="0">
+            <div class="mode-card-icon">🃏</div>
+            <div>
+              <h3>Karteikarten</h3>
+              <p>Tippe zum Aufdecken, bewerte dich selbst</p>
+            </div>
+          </div>
+          <div class="mode-card" onclick="App.startRecap('quiz')" role="button" tabindex="0">
+            <div class="mode-card-icon">✍️</div>
+            <div>
+              <h3>Quiz</h3>
+              <p>Tippe die Übersetzung ein</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- ==================== FLASHCARDS ==================== -->
     <div id="view-flashcard" class="view">
       <div class="header">

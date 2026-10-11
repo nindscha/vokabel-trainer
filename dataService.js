@@ -83,6 +83,14 @@ const DataService = (() => {
     return words;
   }
 
+  // Alle Vokabeln aller Wochen laden, jeweils mit Wochenangabe
+  async function getAllWords() {
+    const weeks = await getWeeks();
+    const lists = await Promise.all(weeks.map(w => getWords(w.week)));
+    return lists.flatMap((words, i) =>
+      words.map(w => ({ week: weeks[i].week, en: w.en, de: w.de })));
+  }
+
   // Fortschritt einer Woche laden
   function getProgress(week) {
     const all = JSON.parse(localStorage.getItem('vokabel_progress') || '{}');
@@ -202,6 +210,7 @@ const DataService = (() => {
   return {
     getWeeks,
     getWords,
+    getAllWords,
     getProgress,
     saveWordResult,
     syncChildProgress,
