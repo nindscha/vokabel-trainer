@@ -2,7 +2,6 @@
   "weeks": [
     {
       "week": 1,
-      "label": "What can you see?",
       "words": [
         { "en": "what", "de": "was" },
         { "en": "can", "de": "können" },
@@ -21,7 +20,6 @@
     },
     {
       "week": 2,
-      "label": "Farben & Spiel",
       "words": [
         { "en": "red", "de": "rot" },
         { "en": "orange", "de": "orange" },
@@ -44,7 +42,6 @@
     },
     {
       "week": 3,
-      "label": "Zahlen & Kennenlernen",
       "words": [
         { "en": "kid", "de": "Kind" },
         { "en": "my name is", "de": "Ich heiße, ich bin" },

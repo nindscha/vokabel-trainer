@@ -26,14 +26,14 @@ const DataService = (() => {
       try {
         const { data, error } = await supabase
           .from('words')
-          .select('week, week_label')
+          .select('week')
           .order('week', { ascending: true });
 
         if (!error && data && data.length > 0) {
           const map = {};
           data.forEach(row => {
             if (!map[row.week]) {
-              map[row.week] = { week: row.week, label: row.week_label, wordCount: 0 };
+              map[row.week] = { week: row.week, wordCount: 0 };
             }
             map[row.week].wordCount++;
           });
@@ -49,7 +49,6 @@ const DataService = (() => {
     const localData = await loadLocalJson();
     cachedWeeks = localData.weeks.map(w => ({
       week: w.week,
-      label: w.label,
       wordCount: w.words.length
     }));
     return cachedWeeks;
