@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vokabel-trainer-v12';
+const CACHE_NAME = 'vokabel-trainer-v13';
 const ASSETS = [
   './',
   './index.html',
@@ -8,6 +8,7 @@ const ASSETS = [
   './js/authService.js',
   './js/dataService.js',
   './js/familyService.js',
+  './js/dom.js',
   './js/family.js',
   './data/vokabeln.json',
   './manifest.json'

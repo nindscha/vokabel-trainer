@@ -1,6 +1,8 @@
 // app.js – Vokabel-Trainer Hauptlogik
 
 const App = (() => {
+  const { h } = Dom;
+
   // State
   let currentWeek = null;
   let weekAllWords = []; // Alle Vokabeln der ausgewählten Woche
@@ -31,13 +33,6 @@ const App = (() => {
   };
 
   // ---------- Navigation ----------
-  function el(tag, className, ...children) {
-    const node = document.createElement(tag);
-    if (className) node.className = className;
-    node.append(...children);
-    return node;
-  }
-
   function showView(name) {
     Object.values(views).forEach(v => v.classList.remove('active'));
     views[name].classList.add('active');
@@ -58,9 +53,9 @@ const App = (() => {
 
     weekList.replaceChildren();
     if (weeks.length === 0) {
-      weekList.append(el('div', 'empty-state',
-        el('div', 'empty-state-icon', '📭'),
-        el('p', null, 'Noch keine Vokabeln vorhanden.')));
+      weekList.append(h('div', { class: 'empty-state' },
+        h('div', { class: 'empty-state-icon' }, '📭'),
+        h('p', {}, 'Noch keine Vokabeln vorhanden.')));
       showView('home');
       return;
     }
@@ -74,26 +69,26 @@ const App = (() => {
         ? Math.round((weekStats.practiced / w.wordCount) * 100)
         : 0;
 
-      const fill = el('div', 'progress-bar-fill');
+      const fill = h('div', { class: 'progress-bar-fill' });
       fill.style.width = `${pct}%`;
-      const card = el('button', 'week-card',
-        el('div', 'week-card-icon', weekIcons[i % weekIcons.length]),
-        el('div', 'week-card-content',
-          el('div', 'week-card-title', `Woche ${w.week}`),
-          el('div', 'week-card-subtitle', `${w.wordCount} Vokabeln`),
-          el('div', 'progress-bar-bg', fill)),
-        el('div', 'week-card-progress',
-          el('div', 'week-card-progress-ring', `${pct}%`)));
+      const card = h('button', { class: 'week-card' },
+        h('div', { class: 'week-card-icon' }, weekIcons[i % weekIcons.length]),
+        h('div', { class: 'week-card-content' },
+          h('div', { class: 'week-card-title' }, `Woche ${w.week}`),
+          h('div', { class: 'week-card-subtitle' }, `${w.wordCount} Vokabeln`),
+          h('div', { class: 'progress-bar-bg' }, fill)),
+        h('div', { class: 'week-card-progress' },
+          h('div', { class: 'week-card-progress-ring' }, `${pct}%`)));
       card.type = 'button';
       card.addEventListener('click', () => selectWeek(w.week));
       weekList.append(card);
     });
 
-    const recapCard = el('button', 'week-card recap-card',
-      el('div', 'week-card-icon', '🔁'),
-      el('div', 'week-card-content',
-        el('div', 'week-card-title', 'Wiederholung'),
-        el('div', 'week-card-subtitle', 'Wörter aus allen Wochen')));
+    const recapCard = h('button', { class: 'week-card recap-card' },
+      h('div', { class: 'week-card-icon' }, '🔁'),
+      h('div', { class: 'week-card-content' },
+        h('div', { class: 'week-card-title' }, 'Wiederholung'),
+        h('div', { class: 'week-card-subtitle' }, 'Wörter aus allen Wochen')));
     recapCard.type = 'button';
     recapCard.addEventListener('click', openRecap);
     weekList.append(recapCard);
@@ -452,9 +447,9 @@ const App = (() => {
     if (wrongWords.length > 0) {
       document.getElementById('results-words-section').classList.remove('hidden');
       wordList.replaceChildren(...wrongWords.map(w =>
-        el('div', 'results-word-item',
-          el('span', 'results-word-icon', '❌'),
-          el('span', null, `${w.de} → ${w.en}`))));
+        h('div', { class: 'results-word-item' },
+          h('span', { class: 'results-word-icon' }, '❌'),
+          h('span', {}, `${w.de} → ${w.en}`))));
 
       if (btnRetryWrong) {
         btnRetryWrong.classList.remove('hidden');

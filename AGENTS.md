@@ -3,13 +3,13 @@
 Statische Vanilla-JS-PWA, kein Build, keine Tests, keine Module. Sprache der UI und Doku: Deutsch.
 
 ## Architektur
-- Skripte liegen in `js/` und werden in `index.html` per `<script>` in fester Reihenfolge geladen und hängen als Globals zusammen: supabase → `js/supabaseClient.js` → `js/authService.js` → `js/dataService.js` → `js/familyService.js` → `js/family.js` → `js/app.js`. Neue Skripte in dieser Reihenfolge einfügen.
+- Skripte liegen in `js/` und werden in `index.html` per `<script>` in fester Reihenfolge geladen und hängen als Globals zusammen: supabase → `js/supabaseClient.js` → `js/authService.js` → `js/dataService.js` → `js/familyService.js` → `js/dom.js` → `js/family.js` → `js/app.js`. Neue Skripte in dieser Reihenfolge einfügen.
 - `js/app.js` (`App`) steuert Ansichten (`showView`), Quiz und Karteikarten. `js/family.js` (`Family`) rendert Konto/Familie/Fortschritt.
 - Fortschritt liegt lokal in `localStorage` (`vokabel_progress`, Besitzer in `vokabel_progress_owner`). In die Cloud wird nur mit Kind-Anmeldung geschrieben (`DataService.syncChildProgress`).
 - Vokabeln kommen aus Supabase (`words`), Fallback `data/vokabeln.json`.
 
 ## Konventionen
-- Kein `innerHTML` mit Daten. DOM per `createElement`/`textContent` bauen (siehe `el()` in `js/app.js`, `h()` in `js/family.js`).
+- Kein `innerHTML` mit Daten. DOM per `createElement`/`textContent` bauen (siehe `Dom.h()` in `js/dom.js`).
 - Bedienelemente als `<button>` oder mit `role="button"` und `tabindex="0"`.
 - **Service Worker:** Bei jeder Änderung an gecachten Dateien `CACHE_NAME` in `sw.js` erhöhen. Neue Dateien in `ASSETS` eintragen (mit Pfad, z. B. `./js/neu.js`), sonst werden sie nicht offline geliefert.
 
