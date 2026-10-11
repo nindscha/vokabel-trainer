@@ -18,10 +18,11 @@ Statische Vanilla-JS-PWA, kein Build, keine Tests, keine Module. Sprache der UI 
 - Lokal: `python3 -m http.server 8000`, im Browser durchklicken. Bei Service-Worker-Effekten Registrierung und Cache löschen.
 
 ## Sicherheitsmodell (Supabase)
-- Zugriff nur über RLS und `security definer`-Funktionen in `sql/family_schema.sql` (`create_family`, `add_child`, `join_as_child`, `create_parent_invite`, `accept_parent_invite`). Neue Tabellen immer mit RLS und Policies anlegen.
+- Zugriff nur über RLS und `security definer`-Funktionen aus `sql/migrations/0002_family_groups.sql` (`create_family`, `add_child`, `join_as_child`, `create_parent_invite`, `accept_parent_invite`). Neue Tabellen immer mit RLS und Policies anlegen.
 - Kinder sind anonyme Sitzungen (`is_anonymous`), Eltern normale Konten. Wer Familiencode und Kindname kennt, kann beitreten.
 - Der Publishable Key im Client ist öffentlich gedacht. Keine Secret- oder Service-Keys einchecken.
-- Schemaänderungen als Migration einspielen und `sql/family_schema.sql` synchron halten.
+- Schemaänderungen als neue nummerierte Datei in `sql/migrations/` anlegen (siehe [sql/migrations/README.md](sql/migrations/README.md)). Bestehende Migrationen nicht mehr ändern.
+- Die Datenbank ist die führende Vokabelquelle. `data/vokabeln.json` und `sql/seed_words.sql` daraus neu erzeugen, wenn sich Vokabeln ändern.
 
 ## Fallstricke
 - Alte `progress`-Zeilen ohne `child_id` sind für die App unsichtbar.

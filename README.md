@@ -22,7 +22,7 @@ Dann http://localhost:8000 öffnen. Nach Änderungen an Assets den Service Worke
 
 ## Supabase einrichten
 1. Projekt anlegen, URL und Publishable Key in [js/supabaseClient.js](js/supabaseClient.js) eintragen (öffentlich, die Daten schützt RLS).
-2. Tabellen `words` (week, en, de) und `progress` (child_name, week, word_en, correct, wrong, last_practiced) anlegen und `words` mit [sql/seed_words.sql](sql/seed_words.sql) füllen. Danach [sql/family_schema.sql](sql/family_schema.sql) (Familien, Policies, Funktionen). Das Skript ersetzt alle Policies auf `progress`.
+2. Die Migrationen in [sql/migrations/](sql/migrations/) in Reihenfolge im SQL Editor ausführen: zuerst `0001_baseline.sql` (Tabellen `words` und `progress`), dann [sql/seed_words.sql](sql/seed_words.sql) (Vokabeln), dann `0002_family_groups.sql` (Familien, Policies, Funktionen). Details und offene Punkte: [sql/migrations/README.md](sql/migrations/README.md).
 3. Dashboard → Authentication → Sign In / Providers: **Allow anonymous sign-ins** aktivieren.
 4. Eltern unter Authentication → Users → Add user anlegen (Auto Confirm User).
 
@@ -43,6 +43,7 @@ GitHub Pages aus `main`. Arbeit auf `develop`, Übernahme per Pull Request.
 | `js/family.js` | UI für Konto, Familie, Kinder, Fortschritt |
 | `sw.js`, `manifest.json`, `icons/` | PWA und Offline-Cache |
 | `data/vokabeln.json` | Offline-Vokabeln |
-| `sql/family_schema.sql`, `sql/seed_words.sql` | Datenbank |
+| `sql/migrations/` | Datenbank-Migrationen (`0001`, `0002`, Anleitung) |
+| `sql/seed_words.sql` | Vokabeln für `words` |
 
 Weitere Hinweise für Entwickler und Agenten: [AGENTS.md](AGENTS.md).
