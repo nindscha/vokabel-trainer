@@ -75,7 +75,7 @@ const App = (() => {
       const card = el('button', 'week-card',
         el('div', 'week-card-icon', weekIcons[i % weekIcons.length]),
         el('div', 'week-card-content',
-          el('div', 'week-card-title', `Woche ${w.week} – ${w.label}`),
+          el('div', 'week-card-title', `Woche ${w.week}`),
           el('div', 'week-card-subtitle', `${w.wordCount} Vokabeln`),
           el('div', 'progress-bar-bg', fill)),
         el('div', 'week-card-progress',
@@ -94,11 +94,7 @@ const App = (() => {
     weekAllWords = await DataService.getWords(week);
     currentWords = [...weekAllWords];
 
-    const weeks = await DataService.getWeeks();
-    const weekInfo = weeks.find(w => w.week === week);
-
-    document.getElementById('mode-title').textContent =
-      `Woche ${week} – ${weekInfo?.label || ''}`;
+    document.getElementById('mode-title').textContent = `Woche ${week}`;
     document.getElementById('mode-word-count').textContent =
       `${weekAllWords.length} Vokabeln`;
 

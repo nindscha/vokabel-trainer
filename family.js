@@ -331,7 +331,7 @@ const Family = (() => {
         : 0;
       return h('div', { class: 'week-progress' },
         h('div', { class: 'week-progress-head' },
-          h('strong', {}, `Woche ${week.week} – ${week.label}`),
+          h('strong', {}, `Woche ${week.week}`),
           h('span', { class: 'muted' }, `${percent(correct, wrong)}% richtig`)),
         h('div', { class: 'progress-bar-bg' },
           h('div', { class: 'progress-bar-fill', style: `width: ${coverage}%` })),
