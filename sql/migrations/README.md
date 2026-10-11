@@ -6,6 +6,7 @@ Schema-Änderungen für Supabase (PostgreSQL) liegen hier als nummerierte, einma
 |---|---|---|
 | `0001_baseline.sql` | Tabellen `words` und `progress` vor der Familien-Funktion (idempotent) | Entspricht dem Live-Stand (dort ursprünglich manuell angelegt) |
 | `0002_family_groups.sql` | Familien, Kinder, Einladungen, Policies und Funktionen | Im Live-Projekt angewendet (Migration `family_groups`) |
+| `0003_revoke_write_grants.sql` | Entzieht `anon` und `authenticated` überflüssige Rechte (`TRUNCATE`, `DELETE`, `REFERENCES`, `TRIGGER`; auf `words` auch `INSERT`/`UPDATE`) | Lokal getestet, im Live-Projekt noch nicht angewendet |
 
 ## Regeln
 
@@ -23,5 +24,5 @@ Bei Abweichungen den Stand per Supabase MCP oder `list_migrations` prüfen.
 
 ## Bekannte offene Punkte
 
-- `words` und `progress` haben für `anon` und `authenticated` Rechte wie `TRUNCATE`, `DELETE`, `INSERT` und `UPDATE`. RLS schützt davor nicht. Eine Folgemigration (`0003`) sollte diese Rechte entziehen. Noch nicht angewendet.
+- Die Rechte auf `words` und `progress` (siehe `0003`) sind lokal geprüft, aber im Live-Projekt noch nicht angewendet.
 - Die Supabase-Warnungen zu `SECURITY DEFINER`-Funktionen für `authenticated` und zum deaktivierten Passwortschutz sind offen.
