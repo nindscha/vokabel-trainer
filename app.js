@@ -13,6 +13,9 @@ const App = (() => {
   let isAnimating = false;
   let flashcardResetTimer = null;
   let quizState = 'input'; // 'input' | 'feedback'
+  let recapOptions = null; // { count, strategy } im Wiederholungs-Modus, sonst null
+  let recapStrategy = 'random'; // 'random' | 'wrong' | 'least'
+  let recapTotal = 0; // Gesamtzahl aller Vokabeln für den Wiederholungs-Modus
 
   // DOM Elements
   const views = {
@@ -23,7 +26,8 @@ const App = (() => {
     results: document.getElementById('view-results'),
     account: document.getElementById('view-account'),
     family: document.getElementById('view-family'),
-    progress: document.getElementById('view-progress')
+    progress: document.getElementById('view-progress'),
+    recap: document.getElementById('view-recap')
   };
 
   // ---------- Navigation ----------
@@ -85,12 +89,22 @@ const App = (() => {
       weekList.append(card);
     });
 
+    const recapCard = el('button', 'week-card recap-card',
+      el('div', 'week-card-icon', '🔁'),
+      el('div', 'week-card-content',
+        el('div', 'week-card-title', 'Wiederholung'),
+        el('div', 'week-card-subtitle', 'Wörter aus allen Wochen')));
+    recapCard.type = 'button';
+    recapCard.addEventListener('click', openRecap);
+    weekList.append(recapCard);
+
     showView('home');
   }
 
   // ---------- Week Selection → Mode ----------
   async function selectWeek(week) {
     currentWeek = week;
+    recapOptions = null;
     weekAllWords = await DataService.getWords(week);
     currentWords = [...weekAllWords];
 
@@ -186,7 +200,7 @@ const App = (() => {
   function flashcardResult(knew) {
     const word = currentWords[currentIndex];
     const en = word.en;
-    DataService.saveWordResult(currentWeek, en, knew);
+    DataService.saveWordResult(word.week ?? currentWeek, en, knew);
     sessionResults.push({ word, correct: knew });
     currentIndex++;
     renderFlashcard();
@@ -291,7 +305,7 @@ const App = (() => {
         ? `✅ Richtig! (${rawTarget})`
         : `❌ Richtig wäre: ${rawTarget}`;
 
-      DataService.saveWordResult(currentWeek, word.en, isCorrect);
+      DataService.saveWordResult(word.week ?? currentWeek, word.en, isCorrect);
       sessionResults.push({ word, correct: isCorrect });
 
       btn.textContent = currentIndex < currentWords.length - 1 ? 'Weiter' : 'Ergebnis';
@@ -309,6 +323,88 @@ const App = (() => {
     }
   }
 
+  // ---------- Recap (Wiederholung über alle Wochen) ----------
+  async function openRecap() {
+    const words = await DataService.getAllWords();
+    recapTotal = words.length;
+    recapOptions = null;
+    currentWeek = null;
+
+    const weekCount = new Set(words.map(w => w.week)).size;
+    document.getElementById('recap-total').textContent =
+      `${recapTotal} Vokabeln aus ${weekCount} ${weekCount === 1 ? 'Woche' : 'Wochen'}`;
+    document.getElementById('recap-count').value = Math.min(10, recapTotal);
+    setRecapStrategy('random');
+    clearRecapError();
+    showView('recap');
+  }
+
+  function setRecapStrategy(strategy) {
+    recapStrategy = strategy;
+    document.querySelectorAll('.recap-strategy button').forEach(btn => {
+      const active = btn.dataset.strategy === strategy;
+      btn.classList.toggle('active', active);
+      btn.setAttribute('aria-pressed', String(active));
+    });
+  }
+
+  function showRecapError(message) {
+    const box = document.getElementById('recap-error');
+    box.textContent = message;
+    box.classList.remove('hidden');
+  }
+
+  function clearRecapError() {
+    const box = document.getElementById('recap-error');
+    box.textContent = '';
+    box.classList.add('hidden');
+  }
+
+  async function startRecap(mode) {
+    clearRecapError();
+    if (recapTotal === 0) {
+      showRecapError('Noch keine Vokabeln vorhanden.');
+      return;
+    }
+    const input = document.getElementById('recap-count');
+    const requested = Number(input.value);
+    if (!Number.isInteger(requested) || requested < 1) {
+      showRecapError('Bitte eine ganze Zahl ab 1 eingeben.');
+      return;
+    }
+    const count = Math.min(requested, recapTotal);
+    input.value = count;
+    recapOptions = { count, strategy: recapStrategy };
+    await launchRecap(mode);
+  }
+
+  async function launchRecap(mode) {
+    const words = await buildRecapSelection(recapOptions.count, recapOptions.strategy);
+    if (mode === 'flashcard') {
+      startFlashcards(words);
+    } else {
+      startQuiz(words);
+    }
+  }
+
+  async function buildRecapSelection(count, strategy) {
+    const pool = shuffleArray(await DataService.getAllWords());
+    if (strategy === 'random') return pool.slice(0, count);
+
+    // Zufällige Reihenfolge vor dem Sortieren verteilt Gleichstände fair
+    const keyed = pool.map(word => ({ word, key: recapKey(word, strategy) }));
+    keyed.sort((a, b) => strategy === 'wrong' ? b.key - a.key : a.key - b.key);
+    return keyed.slice(0, count).map(item => item.word);
+  }
+
+  // 'wrong': Anteil falscher Antworten, ungeübt = 1. 'least': Anzahl Übungen, ungeübt = 0.
+  function recapKey(word, strategy) {
+    const { correct = 0, wrong = 0 } = DataService.getProgress(word.week)[word.en] || {};
+    const attempts = correct + wrong;
+    if (strategy === 'wrong') return attempts === 0 ? 1 : wrong / attempts;
+    return attempts;
+  }
+
   // ---------- Results View ----------
   function showResults() {
     const correct = sessionResults.filter(r => r.correct).length;
@@ -317,7 +413,8 @@ const App = (() => {
       ? Math.round((correct / sessionResults.length) * 100)
       : 0;
 
-    const isRetryRound = currentWords.length < weekAllWords.length;
+    const fullSetSize = recapOptions ? recapOptions.count : weekAllWords.length;
+    const isRetryRound = currentWords.length < fullSetSize;
     let emoji, title;
 
     if (pct === 100) {
@@ -337,7 +434,8 @@ const App = (() => {
       title = 'Übung macht den Meister!';
     }
 
-    const modeName = currentMode === 'flashcard' ? 'Karteikarten' : 'Quiz';
+    const baseModeName = currentMode === 'flashcard' ? 'Karteikarten' : 'Quiz';
+    const modeName = recapOptions ? `Wiederholung • ${baseModeName}` : baseModeName;
     document.getElementById('results-emoji').textContent = emoji;
     document.getElementById('results-title').textContent = title;
     document.getElementById('results-subtitle').textContent =
@@ -390,6 +488,10 @@ const App = (() => {
   }
 
   function retryAllWords() {
+    if (recapOptions) {
+      launchRecap(currentMode);
+      return;
+    }
     if (currentMode === 'flashcard') {
       startFlashcards(weekAllWords);
     } else {
@@ -398,12 +500,17 @@ const App = (() => {
   }
 
   // ---------- Helpers ----------
-  function shuffleWords() {
-    currentWords = [...currentWords];
-    for (let i = currentWords.length - 1; i > 0; i--) {
+  function shuffleArray(list) {
+    const result = [...list];
+    for (let i = result.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [currentWords[i], currentWords[j]] = [currentWords[j], currentWords[i]];
+      [result[i], result[j]] = [result[j], result[i]];
     }
+    return result;
+  }
+
+  function shuffleWords() {
+    currentWords = shuffleArray(currentWords);
   }
 
   function goHome() {
@@ -412,6 +519,7 @@ const App = (() => {
     currentWords = [];
     currentIndex = 0;
     sessionResults = [];
+    recapOptions = null;
     renderHome();
   }
 
@@ -452,6 +560,9 @@ const App = (() => {
     init,
     showView,
     selectWeek,
+    openRecap,
+    setRecapStrategy,
+    startRecap,
     setDirection,
     startFlashcards,
     startQuiz,

@@ -6,6 +6,7 @@ Live: https://nindscha.github.io/vokabel-trainer/
 
 ## Funktionen
 - Vokabeln nach Wochen, Fortschritt lokal gespeichert (`localStorage`), offlinefähig (Service Worker).
+- **Wiederholung** über alle Wochen: Anzahl frei wählbar, Auswahl zufällig, falsch zuerst oder wenig geübt zuerst, als Karteikarten oder Quiz.
 - **Kinder** treten ohne Konto per Familiencode und Name bei (anonyme Supabase-Sitzung). Ihr Fortschritt wird in die Cloud synchronisiert.
 - **Eltern** melden sich mit E-Mail und Passwort an, verwalten Familie und Kinder, sehen den Fortschritt und laden weitere Eltern per Code ein.
 - Eltern-Konten werden vorerst manuell im Supabase-Dashboard angelegt, es gibt keine Registrierung in der App.
