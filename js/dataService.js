@@ -11,7 +11,7 @@ const DataService = (() => {
   // Lokale JSON-Datei als Fallback laden
   async function loadLocalJson() {
     try {
-      const res = await fetch('vokabeln.json?t=' + Date.now(), { cache: 'no-cache' });
+      const res = await fetch('data/vokabeln.json?t=' + Date.now(), { cache: 'no-cache' });
       return await res.json();
     } catch (e) {
       return { weeks: [] };

@@ -45,8 +45,8 @@
       "words": [
         { "en": "kid", "de": "Kind" },
         { "en": "my name is", "de": "Ich heiße, ich bin" },
-        { "en": "hi", "de": "hallo, hi" },
-        { "en": "hello", "de": "hallo, hi" },
+        { "en": "hi", "de": "hi" },
+        { "en": "hello", "de": "hallo" },
         { "en": "we", "de": "wir" },
         { "en": "we're, we are", "de": "wir sind" },
         { "en": "from", "de": "von, aus" },
@@ -68,6 +68,18 @@
         { "en": "ten", "de": "zehn" },
         { "en": "eleven", "de": "elf" },
         { "en": "twelve", "de": "zwölf" }
+      ]
+    },
+    {
+      "week": 4,
+      "words": [
+        { "en": "Phone", "de": "Telefon" },
+        { "en": "and", "de": "und" },
+        { "en": "mobile phone", "de": "Mobiltelefon, Handy" },
+        { "en": "it‘s, it is", "de": "es ist" },
+        { "en": "what‘s your name", "de": "wie heißt du" },
+        { "en": "How old are you", "de": "wie alt bist du" },
+        { "en": "say", "de": "sagen" }
       ]
     }
   ]

@@ -11,6 +11,7 @@
 
 -- ---------------------------------------------------------------- Tabellen
 
+
 create table if not exists public.families (
   id          uuid primary key default gen_random_uuid(),
   name        text not null check (char_length(name) between 1 and 60),
@@ -35,7 +36,6 @@ create table if not exists public.children (
 create unique index if not exists children_family_name_key
   on public.children (family_id, lower(name));
 
--- Anonyme Geräte-Sitzungen, die zu einem Kind gehören
 create table if not exists public.child_devices (
   user_id     uuid primary key references auth.users(id) on delete cascade,
   child_id    uuid not null references public.children(id) on delete cascade,
@@ -50,12 +50,10 @@ create table if not exists public.parent_invites (
   used_at     timestamptz
 );
 
--- progress: Zuordnung zu einem Kind
 alter table public.progress
   add column if not exists child_id uuid references public.children(id) on delete cascade;
 alter table public.progress alter column child_name drop not null;
 
--- Alte Unique-Constraints (z. B. child_name, week, word_en) entfernen
 do $$
 declare c record;
 begin
@@ -70,12 +68,10 @@ end $$;
 alter table public.progress
   add constraint progress_child_week_word_key unique (child_id, week, word_en);
 
--- ---------------------------------------------------------------- Hilfsfunktionen
-
 create or replace function public.gen_code(len int)
-returns text language plpgsql volatile as $$
+returns text language plpgsql volatile set search_path = public as $$
 declare
-  alphabet constant text := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; -- 32 Zeichen, ohne I/O/0/1
+  alphabet constant text := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   result text := '';
   i int;
 begin
@@ -86,7 +82,7 @@ begin
 end $$;
 
 create or replace function public.is_anonymous_user()
-returns boolean language sql stable as $$
+returns boolean language sql stable set search_path = public as $$
   select coalesce((auth.jwt() ->> 'is_anonymous')::boolean, false);
 $$;
 
@@ -112,8 +108,6 @@ returns boolean language sql stable security definer set search_path = public as
     where c.id = cid and m.user_id = auth.uid()
   );
 $$;
-
--- ---------------------------------------------------------------- RPCs
 
 create or replace function public.create_family(p_name text)
 returns public.families language plpgsql security definer set search_path = public as $$
@@ -241,7 +235,12 @@ grant execute on function
   public.create_parent_invite(uuid), public.accept_parent_invite(text)
 to authenticated;
 
--- ---------------------------------------------------------------- RLS
+revoke all on function public.is_family_parent(uuid), public.is_child_session(uuid),
+  public.is_child_parent(uuid), public.gen_code(int), public.is_anonymous_user()
+from public, anon;
+grant execute on function public.is_family_parent(uuid), public.is_child_session(uuid),
+  public.is_child_parent(uuid), public.is_anonymous_user()
+to authenticated;
 
 alter table public.families       enable row level security;
 alter table public.family_members enable row level security;
@@ -258,31 +257,19 @@ grant select, delete on public.children to authenticated;
 grant select on public.child_devices to authenticated;
 grant select, insert, update on public.progress to authenticated;
 
-drop policy if exists families_select on public.families;
 create policy families_select on public.families for select to authenticated
   using (public.is_family_parent(id));
-
-drop policy if exists family_members_select on public.family_members;
 create policy family_members_select on public.family_members for select to authenticated
   using (public.is_family_parent(family_id));
-
-drop policy if exists children_select on public.children;
 create policy children_select on public.children for select to authenticated
   using (public.is_family_parent(family_id) or public.is_child_session(id));
-
-drop policy if exists children_delete on public.children;
 create policy children_delete on public.children for delete to authenticated
   using (public.is_family_parent(family_id));
-
-drop policy if exists child_devices_select on public.child_devices;
 create policy child_devices_select on public.child_devices for select to authenticated
   using (user_id = auth.uid());
-
-drop policy if exists parent_invites_select on public.parent_invites;
 create policy parent_invites_select on public.parent_invites for select to authenticated
   using (public.is_family_parent(family_id));
 
--- Bestehende progress-Policies ersetzen
 do $$
 declare p record;
 begin

@@ -1,6 +1,8 @@
 // app.js – Vokabel-Trainer Hauptlogik
 
 const App = (() => {
+  const { h } = Dom;
+
   // State
   let currentWeek = null;
   let weekAllWords = []; // Alle Vokabeln der ausgewählten Woche
@@ -31,13 +33,6 @@ const App = (() => {
   };
 
   // ---------- Navigation ----------
-  function el(tag, className, ...children) {
-    const node = document.createElement(tag);
-    if (className) node.className = className;
-    node.append(...children);
-    return node;
-  }
-
   function showView(name) {
     Object.values(views).forEach(v => v.classList.remove('active'));
     views[name].classList.add('active');
@@ -58,9 +53,9 @@ const App = (() => {
 
     weekList.replaceChildren();
     if (weeks.length === 0) {
-      weekList.append(el('div', 'empty-state',
-        el('div', 'empty-state-icon', '📭'),
-        el('p', null, 'Noch keine Vokabeln vorhanden.')));
+      weekList.append(h('div', { class: 'empty-state' },
+        h('div', { class: 'empty-state-icon' }, '📭'),
+        h('p', {}, 'Noch keine Vokabeln vorhanden.')));
       showView('home');
       return;
     }
@@ -74,26 +69,26 @@ const App = (() => {
         ? Math.round((weekStats.practiced / w.wordCount) * 100)
         : 0;
 
-      const fill = el('div', 'progress-bar-fill');
+      const fill = h('div', { class: 'progress-bar-fill' });
       fill.style.width = `${pct}%`;
-      const card = el('button', 'week-card',
-        el('div', 'week-card-icon', weekIcons[i % weekIcons.length]),
-        el('div', 'week-card-content',
-          el('div', 'week-card-title', `Woche ${w.week}`),
-          el('div', 'week-card-subtitle', `${w.wordCount} Vokabeln`),
-          el('div', 'progress-bar-bg', fill)),
-        el('div', 'week-card-progress',
-          el('div', 'week-card-progress-ring', `${pct}%`)));
+      const card = h('button', { class: 'week-card' },
+        h('div', { class: 'week-card-icon' }, weekIcons[i % weekIcons.length]),
+        h('div', { class: 'week-card-content' },
+          h('div', { class: 'week-card-title' }, `Woche ${w.week}`),
+          h('div', { class: 'week-card-subtitle' }, `${w.wordCount} Vokabeln`),
+          h('div', { class: 'progress-bar-bg' }, fill)),
+        h('div', { class: 'week-card-progress' },
+          h('div', { class: 'week-card-progress-ring' }, `${pct}%`)));
       card.type = 'button';
       card.addEventListener('click', () => selectWeek(w.week));
       weekList.append(card);
     });
 
-    const recapCard = el('button', 'week-card recap-card',
-      el('div', 'week-card-icon', '🔁'),
-      el('div', 'week-card-content',
-        el('div', 'week-card-title', 'Wiederholung'),
-        el('div', 'week-card-subtitle', 'Wörter aus allen Wochen')));
+    const recapCard = h('button', { class: 'week-card recap-card' },
+      h('div', { class: 'week-card-icon' }, '🔁'),
+      h('div', { class: 'week-card-content' },
+        h('div', { class: 'week-card-title' }, 'Wiederholung'),
+        h('div', { class: 'week-card-subtitle' }, 'Wörter aus allen Wochen')));
     recapCard.type = 'button';
     recapCard.addEventListener('click', openRecap);
     weekList.append(recapCard);
@@ -249,43 +244,6 @@ const App = (() => {
     document.getElementById('quiz-submit').textContent = 'Prüfen';
   }
 
-  function normalizeText(text) {
-    if (!text) return '';
-    return text
-      .toLowerCase()
-      .trim()
-      .replace(/ß/g, 'ss')
-      .replace(/[.,/#!$%^&*;:{}=\-_`~()?"'„“”]/g, '')
-      .replace(/\s+/g, ' ');
-  }
-
-  function getAcceptedVariants(target) {
-    const parts = target.split(/[,;/]/).map(s => s.trim()).filter(Boolean);
-    const variants = new Set();
-
-    const full = normalizeText(target);
-    if (full) variants.add(full);
-
-    parts.forEach(part => {
-      const normPart = normalizeText(part);
-      if (normPart) variants.add(normPart);
-
-      const withParens = normalizeText(part.replace(/\((.*?)\)/g, '$1'));
-      const withoutParens = normalizeText(part.replace(/\(.*?\)/g, ''));
-      if (withParens) variants.add(withParens);
-      if (withoutParens) variants.add(withoutParens);
-    });
-
-    return Array.from(variants).filter(v => v.length > 0);
-  }
-
-  function checkAnswer(userAnswer, target) {
-    const normUser = normalizeText(userAnswer);
-    if (!normUser) return false;
-    const variants = getAcceptedVariants(target);
-    return variants.includes(normUser);
-  }
-
   function submitQuiz() {
     const word = currentWords[currentIndex];
     const input = document.getElementById('quiz-answer');
@@ -294,7 +252,7 @@ const App = (() => {
 
     if (quizState === 'input') {
       const rawTarget = direction === 'de-en' ? word.en : word.de;
-      const isCorrect = checkAnswer(input.value, rawTarget);
+      const isCorrect = Logic.checkAnswer(input.value, rawTarget);
 
       input.classList.add(isCorrect ? 'correct' : 'wrong');
       input.disabled = true;
@@ -388,21 +346,9 @@ const App = (() => {
   }
 
   async function buildRecapSelection(count, strategy) {
-    const pool = shuffleArray(await DataService.getAllWords());
-    if (strategy === 'random') return pool.slice(0, count);
-
-    // Zufällige Reihenfolge vor dem Sortieren verteilt Gleichstände fair
-    const keyed = pool.map(word => ({ word, key: recapKey(word, strategy) }));
-    keyed.sort((a, b) => strategy === 'wrong' ? b.key - a.key : a.key - b.key);
-    return keyed.slice(0, count).map(item => item.word);
-  }
-
-  // 'wrong': Anteil falscher Antworten, ungeübt = 1. 'least': Anzahl Übungen, ungeübt = 0.
-  function recapKey(word, strategy) {
-    const { correct = 0, wrong = 0 } = DataService.getProgress(word.week)[word.en] || {};
-    const attempts = correct + wrong;
-    if (strategy === 'wrong') return attempts === 0 ? 1 : wrong / attempts;
-    return attempts;
+    const words = await DataService.getAllWords();
+    return Logic.selectRecapWords(words, count, strategy,
+      word => DataService.getProgress(word.week)[word.en]);
   }
 
   // ---------- Results View ----------
@@ -452,9 +398,9 @@ const App = (() => {
     if (wrongWords.length > 0) {
       document.getElementById('results-words-section').classList.remove('hidden');
       wordList.replaceChildren(...wrongWords.map(w =>
-        el('div', 'results-word-item',
-          el('span', 'results-word-icon', '❌'),
-          el('span', null, `${w.de} → ${w.en}`))));
+        h('div', { class: 'results-word-item' },
+          h('span', { class: 'results-word-icon' }, '❌'),
+          h('span', {}, `${w.de} → ${w.en}`))));
 
       if (btnRetryWrong) {
         btnRetryWrong.classList.remove('hidden');
@@ -499,18 +445,8 @@ const App = (() => {
     }
   }
 
-  // ---------- Helpers ----------
-  function shuffleArray(list) {
-    const result = [...list];
-    for (let i = result.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [result[i], result[j]] = [result[j], result[i]];
-    }
-    return result;
-  }
-
   function shuffleWords() {
-    currentWords = shuffleArray(currentWords);
+    currentWords = Logic.shuffleArray(currentWords);
   }
 
   function goHome() {

@@ -31,8 +31,8 @@ INSERT INTO words (week, en, de) VALUES
 (2, 'yes', 'ja'),
 (3, 'kid', 'Kind'),
 (3, 'my name is', 'Ich heiße, ich bin'),
-(3, 'hi', 'hallo, hi'),
-(3, 'hello', 'hallo, hi'),
+(3, 'hi', 'hi'),
+(3, 'hello', 'hallo'),
 (3, 'we', 'wir'),
 (3, 'we''re, we are', 'wir sind'),
 (3, 'from', 'von, aus'),
@@ -53,4 +53,11 @@ INSERT INTO words (week, en, de) VALUES
 (3, 'nine', 'neun'),
 (3, 'ten', 'zehn'),
 (3, 'eleven', 'elf'),
-(3, 'twelve', 'zwölf');
+(3, 'twelve', 'zwölf'),
+(4, 'Phone', 'Telefon'),
+(4, 'and', 'und'),
+(4, 'mobile phone', 'Mobiltelefon, Handy'),
+(4, 'it‘s, it is', 'es ist'),
+(4, 'what‘s your name', 'wie heißt du'),
+(4, 'How old are you', 'wie alt bist du'),
+(4, 'say', 'sagen');
