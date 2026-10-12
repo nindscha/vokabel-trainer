@@ -118,6 +118,9 @@ const Family = (() => {
     const child = AuthService.getChild();
     const logout = h('button', { class: 'btn-secondary', type: 'button' }, 'Abmelden');
     logout.addEventListener('click', () => run(logout, async () => {
+      // Letzter Abgleich, damit offline Geübtes nicht verloren geht
+      await DataService.syncChildProgress(child.id);
+      DataService.clearLocalProgress();
       await AuthService.signOut();
       await open();
     }));

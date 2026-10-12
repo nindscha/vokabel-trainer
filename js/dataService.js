@@ -143,9 +143,8 @@ const DataService = (() => {
   async function syncChildProgress(childId) {
     if (!supabase || !childId) return;
 
-    // Fortschritt eines anderen Kindes auf diesem Gerät nicht vermischen
-    const owner = localStorage.getItem(OWNER_KEY);
-    if (owner && owner !== childId) localStorage.removeItem(PROGRESS_KEY);
+    // Nur eigenen Fortschritt übernehmen; Gast- oder fremder Fortschritt wird verworfen
+    if (localStorage.getItem(OWNER_KEY) !== childId) localStorage.removeItem(PROGRESS_KEY);
     localStorage.setItem(OWNER_KEY, childId);
 
     try {
@@ -188,6 +187,12 @@ const DataService = (() => {
     }
   }
 
+  // Lokalen Fortschritt samt Besitzer löschen (beim Abmelden eines Kindes)
+  function clearLocalProgress() {
+    localStorage.removeItem(PROGRESS_KEY);
+    localStorage.removeItem(OWNER_KEY);
+  }
+
   // Statistik für eine Woche
   function getWeekStats(week) {
     return { practiced: Object.keys(getProgress(week)).length };
@@ -214,6 +219,7 @@ const DataService = (() => {
     getProgress,
     saveWordResult,
     syncChildProgress,
+    clearLocalProgress,
     getWeekStats,
     getAllStats
   };

@@ -26,7 +26,7 @@ Statische Vanilla-JS-PWA, kein Build, keine Tests, keine Module. Sprache der UI 
 
 ## Fallstricke
 - Alte `progress`-Zeilen ohne `child_id` sind für die App unsichtbar.
-- Ein anderes Kind am selben Gerät setzt den lokalen Fortschritt zurück.
+- Lokaler Fortschritt gehört genau einem Kind. Beim Anmelden wird Gast- oder fremder Fortschritt verworfen, beim Abmelden des Kindes wird er nach einem letzten Abgleich gelöscht. Als Gast oder Elternteil Geübtes landet nie in der Cloud.
 - Registrierung ist bewusst entfernt, Eltern legt der Admin im Dashboard an.
 
 ## Git
