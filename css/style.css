@@ -1065,6 +1065,54 @@ body {
   color: var(--text-lighter);
 }
 
+/* ---------- Elternbereich ---------- */
+.card h4 {
+  font-size: 0.85rem;
+  color: var(--text-light);
+}
+
+.child-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--card-bg);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.child-summary:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.child-summary-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.child-summary .chevron {
+  margin-left: auto;
+}
+
+.child-switcher {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.child-switcher [aria-pressed="true"] {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #fff;
+}
+
 /* Small screens: tighter spacing */
 @media (max-width: 360px) {
   .app {
