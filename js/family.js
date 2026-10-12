@@ -305,11 +305,12 @@ const Family = (() => {
     root.replaceChildren(h('p', { class: 'muted' }, 'Lade…'));
 
     try {
-      const [rows, weeks] = await Promise.all([
+      const [rows, words, rounds] = await Promise.all([
         FamilyService.getChildProgress(child.id),
-        DataService.getWeeks()
+        DataService.getAllWords(),
+        FamilyService.getChildRounds(child.id)
       ]);
-      root.replaceChildren(...await buildProgress(rows, weeks));
+      root.replaceChildren(...buildProgress(rows, words, rounds));
     } catch (err) {
       root.replaceChildren();
       setMessage(err.message);
@@ -326,8 +327,8 @@ const Family = (() => {
     return total === 0 ? 0 : Math.round((correct / total) * 100);
   }
 
-  async function buildProgress(rows, weeks) {
-    if (rows.length === 0) {
+  function buildProgress(rows, words, rounds) {
+    if (rows.length === 0 && rounds.length === 0) {
       return [h('p', { class: 'muted' }, 'Noch nichts geübt.')];
     }
 
@@ -341,46 +342,20 @@ const Family = (() => {
       stat(`${percent(totalCorrect, totalWrong)}%`, 'Quote'),
       stat(formatDate(lastDate), 'Zuletzt geübt'));
 
-    const weekRows = weeks.map(week => {
-      const weekRowsData = rows.filter(r => r.week === week.week);
-      const correct = weekRowsData.reduce((sum, r) => sum + r.correct, 0);
-      const wrong = weekRowsData.reduce((sum, r) => sum + r.wrong, 0);
-      const coverage = week.wordCount > 0
-        ? Math.round((weekRowsData.length / week.wordCount) * 100)
-        : 0;
-      return h('div', { class: 'week-progress' },
-        h('div', { class: 'week-progress-head' },
-          h('strong', {}, `Woche ${week.week}`),
-          h('span', { class: 'muted' }, `${percent(correct, wrong)}% richtig`)),
-        h('div', { class: 'progress-bar-bg' },
-          h('div', { class: 'progress-bar-fill', style: `width: ${coverage}%` })),
-        h('div', { class: 'muted small' },
-          `${weekRowsData.length} von ${week.wordCount} Vokabeln geübt`));
-    });
-
-    const difficult = rows
-      .filter(r => r.wrong > r.correct)
-      .sort((a, b) => (b.wrong - b.correct) - (a.wrong - a.correct))
-      .slice(0, 10);
-
-    const translations = {};
-    for (const weekNumber of new Set(difficult.map(r => r.week))) {
-      const words = await DataService.getWords(weekNumber);
-      words.forEach(w => { translations[`${weekNumber}|${w.en}`] = w.de; });
-    }
-
-    const difficultList = difficult.length === 0
-      ? h('p', { class: 'muted' }, 'Keine auffälligen Wörter. 🎉')
-      : h('div', { class: 'stack' }, difficult.map(r =>
-          h('div', { class: 'results-word-item' },
-            h('span', {}, '❌'),
-            h('span', {}, `${r.word_en} → ${translations[`${r.week}|${r.word_en}`] || '?'}`),
-            h('span', { class: 'muted small push-right' }, `${r.wrong}× falsch`))));
+    const today = Logic.localDate();
+    const dates = rounds.map(r => r.played_on);
+    const progress = new Map(rows.map(r => [`${r.week}|${r.word_en}`,
+      { correct: r.correct, wrong: r.wrong, lastPracticed: r.last_practiced }]));
+    const getStats = word => progress.get(`${word.week}|${word.en}`);
+    const translations = new Map(words.map(w => [`${w.week}|${w.en}`, w.de]));
 
     return [
       summary,
-      card('Pro Woche', h('div', { class: 'stack' }, weekRows)),
-      card('Schwierige Wörter', difficultList)
+      Stats.streakCard(dates, today),
+      Stats.calendarCard(dates, today),
+      Stats.levelCard(groupByWeek(words), getStats),
+      Stats.trendCard(rounds, today),
+      Stats.difficultCard(Logic.difficultWords(rows), translations)
     ];
   }
 
