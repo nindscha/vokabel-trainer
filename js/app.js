@@ -193,6 +193,8 @@ const App = (() => {
   }
 
   function flashcardResult(knew) {
+    // Nach Rundenende nichts mehr zählen (sonst doppelte Runden)
+    if (currentIndex >= currentWords.length) return;
     const word = currentWords[currentIndex];
     const en = word.en;
     DataService.saveWordResult(word.week ?? currentWeek, en, knew);
@@ -237,7 +239,7 @@ const App = (() => {
     const input = document.getElementById('quiz-answer');
     input.value = '';
     input.className = 'quiz-input';
-    input.disabled = false;
+    input.readOnly = false;
     input.focus();
 
     document.getElementById('quiz-feedback').classList.add('hidden');
@@ -245,6 +247,8 @@ const App = (() => {
   }
 
   function submitQuiz() {
+    // Weitere Enter auf der Ergebnisseite dürfen keine Runde mehr speichern
+    if (currentIndex >= currentWords.length) return;
     const word = currentWords[currentIndex];
     const input = document.getElementById('quiz-answer');
     const feedback = document.getElementById('quiz-feedback');
@@ -255,7 +259,8 @@ const App = (() => {
       const isCorrect = Logic.checkAnswer(input.value, rawTarget);
 
       input.classList.add(isCorrect ? 'correct' : 'wrong');
-      input.disabled = true;
+      // readOnly statt disabled: Fokus bleibt, Enter führt zur nächsten Frage
+      input.readOnly = true;
 
       feedback.classList.remove('hidden', 'correct', 'wrong');
       feedback.classList.add(isCorrect ? 'correct' : 'wrong');
@@ -337,7 +342,19 @@ const App = (() => {
   }
 
   async function launchRecap(mode) {
-    const words = await buildRecapSelection(recapOptions.count, recapOptions.strategy);
+    const words = recapOptions.words ||
+      await buildRecapSelection(recapOptions.count, recapOptions.strategy);
+    if (mode === 'flashcard') {
+      startFlashcards(words);
+    } else {
+      startQuiz(words);
+    }
+  }
+
+  // Wiederholung mit fester Wortliste (z. B. Auffrischen aus der Statistik)
+  function startWordSet(words, mode) {
+    currentWeek = null;
+    recapOptions = { count: words.length, words: [...words] };
     if (mode === 'flashcard') {
       startFlashcards(words);
     } else {
@@ -361,6 +378,15 @@ const App = (() => {
 
     const fullSetSize = recapOptions ? recapOptions.count : weekAllWords.length;
     const isRetryRound = currentWords.length < fullSetSize;
+    DataService.recordRound({
+      mode: currentMode,
+      direction,
+      week: recapOptions ? null : currentWeek,
+      isRetry: isRetryRound,
+      wordCount: sessionResults.length,
+      correct,
+      wrong
+    });
     let emoji, title;
 
     if (pct === 100) {
@@ -400,7 +426,7 @@ const App = (() => {
       wordList.replaceChildren(...wrongWords.map(w =>
         h('div', { class: 'results-word-item' },
           h('span', { class: 'results-word-icon' }, '❌'),
-          h('span', {}, `${w.de} → ${w.en}`))));
+          h('span', {}, direction === 'de-en' ? `${w.de} → ${w.en}` : `${w.en} → ${w.de}`))));
 
       if (btnRetryWrong) {
         btnRetryWrong.classList.remove('hidden');
@@ -499,6 +525,7 @@ const App = (() => {
     openRecap,
     setRecapStrategy,
     startRecap,
+    startWordSet,
     setDirection,
     startFlashcards,
     startQuiz,

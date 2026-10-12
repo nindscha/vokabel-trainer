@@ -3,9 +3,10 @@
 Statische Vanilla-JS-PWA, kein Build, keine Tests, keine Module. Sprache der UI und Doku: Deutsch.
 
 ## Architektur
-- Skripte liegen in `js/` und werden in `index.html` per `<script>` in fester Reihenfolge geladen und hängen als Globals zusammen: supabase → `js/supabaseClient.js` → `js/authService.js` → `js/dataService.js` → `js/familyService.js` → `js/dom.js` → `js/logic.js` → `js/family.js` → `js/app.js`. Neue Skripte in dieser Reihenfolge einfügen.
-- `js/app.js` (`App`) steuert Ansichten (`showView`), Quiz und Karteikarten. `js/family.js` (`Family`) rendert Konto/Familie/Fortschritt. `js/logic.js` (`Logic`) enthält reine Regeln ohne DOM: Antwortprüfung, Mischen, Wiederholungsauswahl.
+- Skripte liegen in `js/` und werden in `index.html` per `<script>` in fester Reihenfolge geladen und hängen als Globals zusammen: supabase → `js/supabaseClient.js` → `js/authService.js` → `js/dataService.js` → `js/familyService.js` → `js/dom.js` → `js/logic.js` → `js/stats.js` → `js/family.js` → `js/app.js`. Neue Skripte in dieser Reihenfolge einfügen.
+- `js/app.js` (`App`) steuert Ansichten (`showView`), Quiz und Karteikarten. `js/family.js` (`Family`) rendert Konto/Familie/Fortschritt. `js/logic.js` (`Logic`) enthält reine Regeln ohne DOM: Antwortprüfung, Mischen, Wiederholungsauswahl, Statistik (Lernstand, Serie, Kalender, Verlauf). `js/stats.js` (`Stats`) baut daraus die Statistik-Karten für Kinder- und Elternansicht.
 - Fortschritt liegt lokal in `localStorage` (`vokabel_progress`, Besitzer in `vokabel_progress_owner`). In die Cloud wird nur mit Kind-Anmeldung geschrieben (`DataService.syncChildProgress`).
+- Abgeschlossene Runden (bis zur Ergebnisseite) landen in der Tabelle `rounds`, offline zuerst in der Warteschlange `vokabel_rounds_pending`. Sie wird bei jedem `syncChildProgress` hochgeladen; die `id` erzeugt der Browser, doppeltes Hochladen ist unschädlich.
 - Vokabeln kommen aus Supabase (`words`), Fallback `data/vokabeln.json`.
 
 ## Konventionen
@@ -26,8 +27,9 @@ Statische Vanilla-JS-PWA, kein Build, keine Tests, keine Module. Sprache der UI 
 
 ## Fallstricke
 - Alte `progress`-Zeilen ohne `child_id` sind für die App unsichtbar.
-- Ein anderes Kind am selben Gerät setzt den lokalen Fortschritt zurück.
+- Lokaler Fortschritt gehört genau einem Kind. Beim Anmelden wird Gast- oder fremder Fortschritt verworfen, beim Abmelden des Kindes wird er nach einem letzten Abgleich gelöscht. Als Gast oder Elternteil Geübtes landet nie in der Cloud.
 - Registrierung ist bewusst entfernt, Eltern legt der Admin im Dashboard an.
+- Datumswerte (`played_on`, `lastPracticed`) sind lokale Daten über `Logic.localDate()`, nicht `toISOString()` (UTC).
 
 ## Git
 Arbeit auf `develop`, Merge nach `main` per Pull Request. `main` wird über GitHub Pages ausgeliefert.

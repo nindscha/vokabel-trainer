@@ -7,6 +7,7 @@ Schema-Änderungen für Supabase (PostgreSQL) liegen hier als nummerierte, einma
 | `0001_baseline.sql` | Tabellen `words` und `progress` vor der Familien-Funktion (idempotent) | Entspricht dem Live-Stand (dort ursprünglich manuell angelegt) |
 | `0002_family_groups.sql` | Familien, Kinder, Einladungen, Policies und Funktionen | Im Live-Projekt angewendet (Migration `family_groups`) |
 | `0003_revoke_write_grants.sql` | Entzieht `anon` und `authenticated` überflüssige Rechte (`TRUNCATE`, `DELETE`, `REFERENCES`, `TRIGGER`; auf `words` auch `INSERT`/`UPDATE`) | Im Live-Projekt angewendet (Migration `revoke_write_grants`) |
+| `0004_rounds.sql` | Tabelle `rounds` (abgeschlossene Übungsrunden für Serie, Kalender, Verlauf) mit RLS: Kind fügt ein, Kind und Eltern lesen | Im Live-Projekt angewendet (Migration `rounds`) |
 
 ## Regeln
 
@@ -18,7 +19,7 @@ Schema-Änderungen für Supabase (PostgreSQL) liegen hier als nummerierte, einma
 
 ## Anwenden
 
-Im Supabase Dashboard unter SQL Editor die Dateien in Reihenfolge ausführen. Auf dem Live-Projekt wurde bereits alles bis `0002` angewendet, daher dort nichts erneut ausführen.
+Im Supabase Dashboard unter SQL Editor die Dateien in Reihenfolge ausführen. Auf dem Live-Projekt wurde bereits alles bis `0004` angewendet, daher dort nichts erneut ausführen.
 
 Bei Abweichungen den Stand per Supabase MCP oder `list_migrations` prüfen.
 

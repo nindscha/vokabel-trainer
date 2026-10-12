@@ -52,6 +52,16 @@ const Family = (() => {
     return h('section', { class: 'card' }, h('h3', {}, title), ...content);
   }
 
+  // [{ week, en, de }] → [{ week, words }] in der Reihenfolge der Wochen
+  function groupByWeek(words) {
+    const map = new Map();
+    words.forEach(word => {
+      if (!map.has(word.week)) map.set(word.week, []);
+      map.get(word.week).push(word);
+    });
+    return [...map].map(([week, list]) => ({ week, words: list }));
+  }
+
   // ---------- Konto ----------
   async function open() {
     const root = show('account', $('account-content'));
@@ -67,7 +77,7 @@ const Family = (() => {
     root.replaceChildren();
 
     if (role === 'parent') await renderParent(root);
-    else if (role === 'child') renderChild(root);
+    else if (role === 'child') await renderChild(root);
     else renderGuest(root);
   }
 
@@ -114,17 +124,39 @@ const Family = (() => {
     );
   }
 
-  function renderChild(root) {
+  async function renderChild(root) {
     const child = AuthService.getChild();
     const logout = h('button', { class: 'btn-secondary', type: 'button' }, 'Abmelden');
     logout.addEventListener('click', () => run(logout, async () => {
+      // Letzter Abgleich, damit offline Geübtes nicht verloren geht
+      await DataService.syncChildProgress(child.id);
+      DataService.clearLocalProgress();
       await AuthService.signOut();
       await open();
     }));
 
+    const loading = h('p', { class: 'muted' }, 'Lade Statistik…');
     root.append(card(`Hallo ${child.name}!`,
       h('p', { class: 'muted' }, `Familie ${child.familyName}. Dein Fortschritt wird gespeichert und ist für deine Eltern sichtbar.`),
-      logout));
+      logout), loading);
+
+    try {
+      const [words, { rounds, complete }] = await Promise.all([
+        DataService.getAllWords(),
+        DataService.getChildRounds(child.id)
+      ]);
+      const today = Logic.localDate();
+      const dates = rounds.map(r => r.played_on);
+      const getStats = word => DataService.getProgress(word.week)[word.en];
+      loading.replaceWith(
+        Stats.streakCard(dates, today),
+        Stats.calendarCard(dates, today, complete),
+        Stats.levelCard(groupByWeek(words), getStats),
+        Stats.refreshCard(Logic.wordsToRefresh(words, getStats, today), App.startWordSet));
+    } catch (err) {
+      loading.remove();
+      setMessage(err.message || String(err));
+    }
   }
 
   async function renderParent(root) {
@@ -273,11 +305,12 @@ const Family = (() => {
     root.replaceChildren(h('p', { class: 'muted' }, 'Lade…'));
 
     try {
-      const [rows, weeks] = await Promise.all([
+      const [rows, words, rounds] = await Promise.all([
         FamilyService.getChildProgress(child.id),
-        DataService.getWeeks()
+        DataService.getAllWords(),
+        FamilyService.getChildRounds(child.id)
       ]);
-      root.replaceChildren(...await buildProgress(rows, weeks));
+      root.replaceChildren(...buildProgress(rows, words, rounds));
     } catch (err) {
       root.replaceChildren();
       setMessage(err.message);
@@ -294,8 +327,8 @@ const Family = (() => {
     return total === 0 ? 0 : Math.round((correct / total) * 100);
   }
 
-  async function buildProgress(rows, weeks) {
-    if (rows.length === 0) {
+  function buildProgress(rows, words, rounds) {
+    if (rows.length === 0 && rounds.length === 0) {
       return [h('p', { class: 'muted' }, 'Noch nichts geübt.')];
     }
 
@@ -309,46 +342,20 @@ const Family = (() => {
       stat(`${percent(totalCorrect, totalWrong)}%`, 'Quote'),
       stat(formatDate(lastDate), 'Zuletzt geübt'));
 
-    const weekRows = weeks.map(week => {
-      const weekRowsData = rows.filter(r => r.week === week.week);
-      const correct = weekRowsData.reduce((sum, r) => sum + r.correct, 0);
-      const wrong = weekRowsData.reduce((sum, r) => sum + r.wrong, 0);
-      const coverage = week.wordCount > 0
-        ? Math.round((weekRowsData.length / week.wordCount) * 100)
-        : 0;
-      return h('div', { class: 'week-progress' },
-        h('div', { class: 'week-progress-head' },
-          h('strong', {}, `Woche ${week.week}`),
-          h('span', { class: 'muted' }, `${percent(correct, wrong)}% richtig`)),
-        h('div', { class: 'progress-bar-bg' },
-          h('div', { class: 'progress-bar-fill', style: `width: ${coverage}%` })),
-        h('div', { class: 'muted small' },
-          `${weekRowsData.length} von ${week.wordCount} Vokabeln geübt`));
-    });
-
-    const difficult = rows
-      .filter(r => r.wrong > r.correct)
-      .sort((a, b) => (b.wrong - b.correct) - (a.wrong - a.correct))
-      .slice(0, 10);
-
-    const translations = {};
-    for (const weekNumber of new Set(difficult.map(r => r.week))) {
-      const words = await DataService.getWords(weekNumber);
-      words.forEach(w => { translations[`${weekNumber}|${w.en}`] = w.de; });
-    }
-
-    const difficultList = difficult.length === 0
-      ? h('p', { class: 'muted' }, 'Keine auffälligen Wörter. 🎉')
-      : h('div', { class: 'stack' }, difficult.map(r =>
-          h('div', { class: 'results-word-item' },
-            h('span', {}, '❌'),
-            h('span', {}, `${r.word_en} → ${translations[`${r.week}|${r.word_en}`] || '?'}`),
-            h('span', { class: 'muted small push-right' }, `${r.wrong}× falsch`))));
+    const today = Logic.localDate();
+    const dates = rounds.map(r => r.played_on);
+    const progress = new Map(rows.map(r => [`${r.week}|${r.word_en}`,
+      { correct: r.correct, wrong: r.wrong, lastPracticed: r.last_practiced }]));
+    const getStats = word => progress.get(`${word.week}|${word.en}`);
+    const translations = new Map(words.map(w => [`${w.week}|${w.en}`, w.de]));
 
     return [
       summary,
-      card('Pro Woche', h('div', { class: 'stack' }, weekRows)),
-      card('Schwierige Wörter', difficultList)
+      Stats.streakCard(dates, today),
+      Stats.calendarCard(dates, today),
+      Stats.levelCard(groupByWeek(words), getStats),
+      Stats.trendCard(rounds, today),
+      Stats.difficultCard(Logic.difficultWords(rows), translations)
     ];
   }
 

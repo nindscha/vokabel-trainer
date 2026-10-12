@@ -932,6 +932,139 @@ body {
   margin-top: 2px;
 }
 
+/* ---------- Statistik ---------- */
+.streak-number {
+  font-size: 2.4rem;
+  font-weight: 800;
+}
+
+.streak-hint {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--warning);
+}
+
+.calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.calendar-head {
+  font-size: 0.7rem;
+  color: var(--text-lighter);
+  text-align: center;
+}
+
+.calendar-day {
+  aspect-ratio: 1;
+  border-radius: 4px;
+  background: var(--border);
+}
+
+.calendar-day.played {
+  background: var(--success);
+}
+
+.calendar-day.future {
+  background: transparent;
+  border: 1px dashed var(--border);
+}
+
+.calendar-day.today {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+
+.level-bar {
+  display: flex;
+  gap: 2px;
+  height: 10px;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.level-seg {
+  flex-basis: 0;
+  min-width: 4px;
+}
+
+.level-seg.secure,
+.legend-dot.secure {
+  background: var(--success);
+}
+
+.level-seg.shaky,
+.legend-dot.shaky {
+  background: var(--warning);
+}
+
+.level-seg.new,
+.legend-dot.new {
+  background: var(--border);
+}
+
+.level-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.legend-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.trend {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 6px;
+  align-items: end;
+}
+
+.trend-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.trend-value {
+  font-size: 0.7rem;
+  color: var(--text-light);
+}
+
+.trend-track {
+  width: 100%;
+  height: 80px;
+  display: flex;
+  align-items: flex-end;
+  background: var(--bg);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.trend-fill {
+  width: 100%;
+  background: var(--primary);
+  border-radius: 4px 4px 0 0;
+}
+
+.trend-label {
+  font-size: 0.65rem;
+  color: var(--text-lighter);
+}
+
 /* Small screens: tighter spacing */
 @media (max-width: 360px) {
   .app {

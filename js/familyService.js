@@ -63,6 +63,17 @@ const FamilyService = (() => {
     );
   }
 
+  async function getChildRounds(childId) {
+    try {
+      return await DataService.fetchAllPages(() => client.from('rounds')
+        .select('id, played_on, finished_at, mode, direction, week, is_retry, word_count, correct, wrong')
+        .eq('child_id', childId)
+        .order('id'));
+    } catch (error) {
+      throw new Error(AuthService.friendlyError(error));
+    }
+  }
+
   return {
     listFamilies,
     listChildren,
@@ -72,6 +83,7 @@ const FamilyService = (() => {
     removeChild,
     createInvite,
     acceptInvite,
-    getChildProgress
+    getChildProgress,
+    getChildRounds
   };
 })();
