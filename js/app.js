@@ -237,7 +237,7 @@ const App = (() => {
     const input = document.getElementById('quiz-answer');
     input.value = '';
     input.className = 'quiz-input';
-    input.disabled = false;
+    input.readOnly = false;
     input.focus();
 
     document.getElementById('quiz-feedback').classList.add('hidden');
@@ -255,7 +255,8 @@ const App = (() => {
       const isCorrect = Logic.checkAnswer(input.value, rawTarget);
 
       input.classList.add(isCorrect ? 'correct' : 'wrong');
-      input.disabled = true;
+      // readOnly statt disabled: Fokus bleibt, Enter führt zur nächsten Frage
+      input.readOnly = true;
 
       feedback.classList.remove('hidden', 'correct', 'wrong');
       feedback.classList.add(isCorrect ? 'correct' : 'wrong');
@@ -400,7 +401,7 @@ const App = (() => {
       wordList.replaceChildren(...wrongWords.map(w =>
         h('div', { class: 'results-word-item' },
           h('span', { class: 'results-word-icon' }, '❌'),
-          h('span', {}, `${w.de} → ${w.en}`))));
+          h('span', {}, direction === 'de-en' ? `${w.de} → ${w.en}` : `${w.en} → ${w.de}`))));
 
       if (btnRetryWrong) {
         btnRetryWrong.classList.remove('hidden');
