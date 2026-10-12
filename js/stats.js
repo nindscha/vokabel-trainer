@@ -138,5 +138,17 @@ const Stats = (() => {
     return card('Schwierige Wörter', content);
   }
 
-  return { streakCard, calendarCard, levelCard, refreshCard, trendCard, difficultCard };
+  // Kinderzeile der Eltern: Serie, heute geübt, Lernstand; gleiche Regeln wie die Statistik
+  function childSummary(name, dates, counts, today, onOpen) {
+    const { current, playedToday } = Logic.streaks(dates, today);
+    const label = `${name}: ${days(current)} am Stück, heute ${playedToday ? 'geübt' : 'noch nicht geübt'}, ${levelText(counts)}`;
+    return h('button', { class: 'child-summary', type: 'button', 'aria-label': label, onclick: onOpen },
+      h('span', { class: 'child-summary-head' },
+        h('strong', {}, name),
+        h('span', { class: 'muted small' }, `🔥 ${current} · heute ${playedToday ? '✓' : '–'}`),
+        h('span', { class: 'muted chevron' }, '›')),
+      levelBar(counts));
+  }
+
+  return { streakCard, calendarCard, levelCard, refreshCard, trendCard, difficultCard, childSummary };
 })();

@@ -193,17 +193,23 @@ const Family = (() => {
       });
     });
 
+    // Kinder zuerst; Verwaltung und Konto werden seltener gebraucht
+    const kidsList = h('div', { class: 'stack' }, h('p', { class: 'muted' }, 'Lade…'));
     root.append(
-      card('Angemeldet', h('p', { class: 'muted' }, user ? user.email : ''), logout),
-      card('Meine Familien', familyList),
-      card('Neue Familie', createForm),
-      card('Einladung annehmen', inviteForm)
+      card('Meine Kinder', kidsList),
+      card('Familie verwalten', familyList,
+        h('h4', {}, 'Neue Familie'), createForm,
+        h('h4', {}, 'Einladung annehmen'), inviteForm),
+      card('Angemeldet', h('p', { class: 'muted' }, user ? user.email : ''), logout)
     );
 
     try {
       const families = await FamilyService.listFamilies();
       if (families.length === 0) {
         familyList.append(h('p', { class: 'muted' }, 'Noch keine Familie. Erstelle eine oder tritt per Einladung bei.'));
+        kidsList.replaceChildren(h('p', { class: 'muted' },
+          'Noch keine Familie. Lege unter „Familie verwalten“ eine an oder nimm eine Einladung an.'));
+        return;
       }
       families.forEach(family => {
         const row = h('button', { class: 'list-row', type: 'button' },
@@ -211,9 +217,48 @@ const Family = (() => {
         row.addEventListener('click', () => openFamily(family));
         familyList.append(row);
       });
+      await renderKids(kidsList, families);
     } catch (err) {
       setMessage(err.message);
     }
+  }
+
+  // Kinderliste mit Kurzinfo; jede Zeile öffnet sofort die Statistik, auch während sie lädt
+  async function renderKids(list, families) {
+    const childrenByFamily = await Promise.all(families.map(f => FamilyService.listChildren(f.id)));
+    const words = DataService.getAllWords();
+    const today = Logic.localDate();
+    list.replaceChildren();
+    families.forEach((family, i) => {
+      const kids = childrenByFamily[i];
+      if (families.length > 1) list.append(h('h4', {}, family.name));
+      if (kids.length === 0) {
+        list.append(h('p', { class: 'muted small' }, 'Noch keine Kinder angelegt.'));
+      }
+      kids.forEach(child => {
+        const openStats = () => openProgress(family, child, kids, open);
+        const slot = h('button', { class: 'child-summary', type: 'button', onclick: openStats },
+          h('span', { class: 'child-summary-head' },
+            h('strong', {}, child.name),
+            h('span', { class: 'muted small' }, '…'),
+            h('span', { class: 'muted chevron' }, '›')));
+        list.append(slot);
+        loadChildSummary(child, words, today, openStats)
+          .then(summary => slot.replaceWith(summary))
+          .catch(err => console.warn('Kurzinfo nicht geladen:', err.message || err));
+      });
+    });
+  }
+
+  async function loadChildSummary(child, wordsPromise, today, onOpen) {
+    const [rows, rounds, words] = await Promise.all([
+      FamilyService.getChildProgress(child.id),
+      FamilyService.getChildRounds(child.id),
+      wordsPromise
+    ]);
+    const progress = progressLookup(rows);
+    const counts = Logic.levelCounts(words, word => progress.get(`${word.week}|${word.en}`));
+    return Stats.childSummary(child.name, rounds.map(r => r.played_on), counts, today, onOpen);
   }
 
   // ---------- Familie ----------
@@ -252,7 +297,7 @@ const Family = (() => {
 
     children.forEach(child => {
       const progressBtn = h('button', { class: 'btn-small', type: 'button' }, 'Fortschritt');
-      progressBtn.addEventListener('click', () => openProgress(family, child));
+      progressBtn.addEventListener('click', () => openProgress(family, child, children));
       const removeBtn = h('button', {
         class: 'btn-small danger', type: 'button', 'aria-label': `${child.name} entfernen`
       }, '🗑');
@@ -298,11 +343,17 @@ const Family = (() => {
   }
 
   // ---------- Fortschritt eines Kindes ----------
-  async function openProgress(family, child) {
+  // Zählt Aufrufe, damit beim schnellen Umschalten keine ältere Antwort die neue überschreibt
+  let progressRequest = 0;
+
+  // siblings: Kinder der Familie für den Umschalter; back: Ziel von „← Zurück“
+  async function openProgress(family, child, siblings = [child], back = () => openFamily(family)) {
+    const request = ++progressRequest;
     const root = show('progress', $('progress-content'));
     $('progress-title').textContent = child.name;
-    $('progress-back').onclick = () => openFamily(family);
-    root.replaceChildren(h('p', { class: 'muted' }, 'Lade…'));
+    $('progress-back').onclick = back;
+    const switcher = siblings.length > 1 ? childSwitcher(family, child, siblings, back) : null;
+    root.replaceChildren(...[switcher, h('p', { class: 'muted' }, 'Lade…')].filter(Boolean));
 
     try {
       const [rows, words, rounds] = await Promise.all([
@@ -310,11 +361,30 @@ const Family = (() => {
         DataService.getAllWords(),
         FamilyService.getChildRounds(child.id)
       ]);
-      root.replaceChildren(...buildProgress(rows, words, rounds));
+      if (request !== progressRequest) return;
+      root.replaceChildren(...[switcher, ...buildProgress(rows, words, rounds)].filter(Boolean));
     } catch (err) {
-      root.replaceChildren();
+      if (request !== progressRequest) return;
+      root.replaceChildren(...[switcher].filter(Boolean));
       setMessage(err.message);
     }
+  }
+
+  function childSwitcher(family, current, siblings, back) {
+    return h('div', { class: 'child-switcher', role: 'group', 'aria-label': 'Kind wählen' },
+      siblings.map(child => h('button', {
+        class: 'btn-small',
+        type: 'button',
+        'aria-pressed': String(child.id === current.id),
+        onclick: () => {
+          if (child.id !== current.id) openProgress(family, child, siblings, back);
+        }
+      }, child.name)));
+  }
+
+  function progressLookup(rows) {
+    return new Map(rows.map(r => [`${r.week}|${r.word_en}`,
+      { correct: r.correct, wrong: r.wrong, lastPracticed: r.last_practiced }]));
   }
 
   function formatDate(iso) {
@@ -344,8 +414,7 @@ const Family = (() => {
 
     const today = Logic.localDate();
     const dates = rounds.map(r => r.played_on);
-    const progress = new Map(rows.map(r => [`${r.week}|${r.word_en}`,
-      { correct: r.correct, wrong: r.wrong, lastPracticed: r.last_practiced }]));
+    const progress = progressLookup(rows);
     const getStats = word => progress.get(`${word.week}|${word.en}`);
     const translations = new Map(words.map(w => [`${w.week}|${w.en}`, w.de]));
 
