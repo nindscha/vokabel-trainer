@@ -193,6 +193,8 @@ const App = (() => {
   }
 
   function flashcardResult(knew) {
+    // Nach Rundenende nichts mehr zählen (sonst doppelte Runden)
+    if (currentIndex >= currentWords.length) return;
     const word = currentWords[currentIndex];
     const en = word.en;
     DataService.saveWordResult(word.week ?? currentWeek, en, knew);
@@ -245,6 +247,8 @@ const App = (() => {
   }
 
   function submitQuiz() {
+    // Weitere Enter auf der Ergebnisseite dürfen keine Runde mehr speichern
+    if (currentIndex >= currentWords.length) return;
     const word = currentWords[currentIndex];
     const input = document.getElementById('quiz-answer');
     const feedback = document.getElementById('quiz-feedback');

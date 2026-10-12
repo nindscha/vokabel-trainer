@@ -202,6 +202,18 @@ const DataService = (() => {
     localStorage.removeItem(OWNER_KEY);
   }
 
+  // PostgREST liefert höchstens 1000 Zeilen pro Anfrage, daher seitenweise laden.
+  // buildQuery muss eine stabile Sortierung enthalten.
+  async function fetchAllPages(buildQuery, pageSize = 1000) {
+    const rows = [];
+    for (let from = 0; ; from += pageSize) {
+      const { data, error } = await buildQuery().range(from, from + pageSize - 1);
+      if (error) throw error;
+      rows.push(...data);
+      if (data.length < pageSize) return rows;
+    }
+  }
+
   function readPendingRounds() {
     try {
       return JSON.parse(localStorage.getItem(ROUNDS_KEY)) || [];
@@ -256,11 +268,11 @@ const DataService = (() => {
     const pending = readPendingRounds().filter(r => r.child_id === childId);
     if (!supabase) return { rounds: pending, complete: false };
     try {
-      const { data, error } = await supabase
+      const data = await fetchAllPages(() => supabase
         .from('rounds')
         .select(ROUND_COLUMNS)
-        .eq('child_id', childId);
-      if (error) throw error;
+        .eq('child_id', childId)
+        .order('id'));
       const ids = new Set(data.map(r => r.id));
       return { rounds: data.concat(pending.filter(r => !ids.has(r.id))), complete: true };
     } catch (err) {
@@ -298,6 +310,7 @@ const DataService = (() => {
     clearLocalProgress,
     recordRound,
     getChildRounds,
+    fetchAllPages,
     getWeekStats,
     getAllStats
   };

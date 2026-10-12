@@ -110,14 +110,12 @@ const Stats = (() => {
 
   function trendCard(rounds, today) {
     const weeks = Logic.weeklyAccuracy(rounds, today);
-    const lastWithData = weeks.map(w => w.rate !== null).lastIndexOf(true);
-    const columns = weeks.map((week, i) => {
+    const columns = weeks.map(week => {
       const pct = week.rate === null ? null : Math.round(week.rate * 100);
       const fill = h('div', { class: 'trend-fill' });
       fill.style.height = `${pct ?? 0}%`;
       const label = `Woche ab ${shortDate(week.weekStart)}: ${pct === null ? 'keine Runde' : `${pct} % richtig`}`;
-      // Zahl nur an der jüngsten Woche, die übrigen per Tooltip
-      const value = pct === null ? '–' : i === lastWithData ? `${pct}%` : '';
+      const value = pct === null ? '–' : `${pct}%`;
       return h('div', { class: 'trend-col', role: 'listitem', 'aria-label': label, title: label },
         h('div', { class: 'trend-value', 'aria-hidden': 'true' }, value),
         h('div', { class: 'trend-track', 'aria-hidden': 'true' }, fill),
