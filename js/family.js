@@ -52,6 +52,16 @@ const Family = (() => {
     return h('section', { class: 'card' }, h('h3', {}, title), ...content);
   }
 
+  // [{ week, en, de }] → [{ week, words }] in der Reihenfolge der Wochen
+  function groupByWeek(words) {
+    const map = new Map();
+    words.forEach(word => {
+      if (!map.has(word.week)) map.set(word.week, []);
+      map.get(word.week).push(word);
+    });
+    return [...map].map(([week, list]) => ({ week, words: list }));
+  }
+
   // ---------- Konto ----------
   async function open() {
     const root = show('account', $('account-content'));
@@ -67,7 +77,7 @@ const Family = (() => {
     root.replaceChildren();
 
     if (role === 'parent') await renderParent(root);
-    else if (role === 'child') renderChild(root);
+    else if (role === 'child') await renderChild(root);
     else renderGuest(root);
   }
 
@@ -114,7 +124,7 @@ const Family = (() => {
     );
   }
 
-  function renderChild(root) {
+  async function renderChild(root) {
     const child = AuthService.getChild();
     const logout = h('button', { class: 'btn-secondary', type: 'button' }, 'Abmelden');
     logout.addEventListener('click', () => run(logout, async () => {
@@ -125,9 +135,28 @@ const Family = (() => {
       await open();
     }));
 
+    const loading = h('p', { class: 'muted' }, 'Lade Statistik…');
     root.append(card(`Hallo ${child.name}!`,
       h('p', { class: 'muted' }, `Familie ${child.familyName}. Dein Fortschritt wird gespeichert und ist für deine Eltern sichtbar.`),
-      logout));
+      logout), loading);
+
+    try {
+      const [words, { rounds, complete }] = await Promise.all([
+        DataService.getAllWords(),
+        DataService.getChildRounds(child.id)
+      ]);
+      const today = Logic.localDate();
+      const dates = rounds.map(r => r.played_on);
+      const getStats = word => DataService.getProgress(word.week)[word.en];
+      loading.replaceWith(
+        Stats.streakCard(dates, today),
+        Stats.calendarCard(dates, today, complete),
+        Stats.levelCard(groupByWeek(words), getStats),
+        Stats.refreshCard(Logic.wordsToRefresh(words, getStats, today), App.startWordSet));
+    } catch (err) {
+      loading.remove();
+      setMessage(err.message || String(err));
+    }
   }
 
   async function renderParent(root) {

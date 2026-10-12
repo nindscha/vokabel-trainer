@@ -10,6 +10,7 @@ const ASSETS = [
   './js/familyService.js',
   './js/dom.js',
   './js/logic.js',
+  './js/stats.js',
   './js/family.js',
   './data/vokabeln.json',
   './manifest.json'
