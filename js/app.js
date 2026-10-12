@@ -338,7 +338,19 @@ const App = (() => {
   }
 
   async function launchRecap(mode) {
-    const words = await buildRecapSelection(recapOptions.count, recapOptions.strategy);
+    const words = recapOptions.words ||
+      await buildRecapSelection(recapOptions.count, recapOptions.strategy);
+    if (mode === 'flashcard') {
+      startFlashcards(words);
+    } else {
+      startQuiz(words);
+    }
+  }
+
+  // Wiederholung mit fester Wortliste (z. B. Auffrischen aus der Statistik)
+  function startWordSet(words, mode) {
+    currentWeek = null;
+    recapOptions = { count: words.length, words: [...words] };
     if (mode === 'flashcard') {
       startFlashcards(words);
     } else {
@@ -509,6 +521,7 @@ const App = (() => {
     openRecap,
     setRecapStrategy,
     startRecap,
+    startWordSet,
     setDirection,
     startFlashcards,
     startQuiz,
