@@ -3,6 +3,9 @@
 const DataService = (() => {
   const PROGRESS_KEY = 'vokabel_progress';
   const OWNER_KEY = 'vokabel_progress_owner';
+  const ROUNDS_KEY = 'vokabel_rounds_pending';
+  const ROUND_COLUMNS =
+    'id, child_id, played_on, finished_at, mode, direction, week, is_retry, word_count, correct, wrong';
   const supabase = Backend.client;
 
   let cachedWeeks = null;
@@ -110,7 +113,7 @@ const DataService = (() => {
     } else {
       all[key][word].wrong++;
     }
-    all[key][word].lastPracticed = new Date().toISOString().split('T')[0];
+    all[key][word].lastPracticed = Logic.localDate();
     localStorage.setItem('vokabel_progress', JSON.stringify(all));
 
     // 2. Im Hintergrund in Supabase synchronisieren (nur mit Kind-Anmeldung)
@@ -144,7 +147,10 @@ const DataService = (() => {
     if (!supabase || !childId) return;
 
     // Nur eigenen Fortschritt übernehmen; Gast- oder fremder Fortschritt wird verworfen
-    if (localStorage.getItem(OWNER_KEY) !== childId) localStorage.removeItem(PROGRESS_KEY);
+    if (localStorage.getItem(OWNER_KEY) !== childId) {
+      localStorage.removeItem(PROGRESS_KEY);
+      localStorage.removeItem(ROUNDS_KEY);
+    }
     localStorage.setItem(OWNER_KEY, childId);
 
     try {
@@ -185,12 +191,82 @@ const DataService = (() => {
     } catch (err) {
       console.warn('Progress sync failed:', err.message || err);
     }
+
+    await flushPendingRounds(childId);
   }
 
-  // Lokalen Fortschritt samt Besitzer löschen (beim Abmelden eines Kindes)
+  // Lokalen Fortschritt, wartende Runden und Besitzer löschen (beim Abmelden eines Kindes)
   function clearLocalProgress() {
     localStorage.removeItem(PROGRESS_KEY);
+    localStorage.removeItem(ROUNDS_KEY);
     localStorage.removeItem(OWNER_KEY);
+  }
+
+  function readPendingRounds() {
+    try {
+      return JSON.parse(localStorage.getItem(ROUNDS_KEY)) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  // Abgeschlossene Runde merken und hochladen (nur mit Kind-Anmeldung)
+  async function recordRound({ mode, direction, week, isRetry, wordCount, correct, wrong }) {
+    const child = AuthService.getChild();
+    if (!child || wordCount === 0) return;
+
+    const now = new Date();
+    const pending = readPendingRounds();
+    pending.push({
+      id: crypto.randomUUID(),
+      child_id: child.id,
+      played_on: Logic.localDate(now),
+      finished_at: now.toISOString(),
+      mode,
+      direction,
+      week: week ?? null,
+      is_retry: isRetry,
+      word_count: wordCount,
+      correct,
+      wrong
+    });
+    localStorage.setItem(ROUNDS_KEY, JSON.stringify(pending));
+    await flushPendingRounds(child.id);
+  }
+
+  // Wartende Runden hochladen; bereits vorhandene ids werden ignoriert
+  async function flushPendingRounds(childId) {
+    const pending = readPendingRounds().filter(r => r.child_id === childId);
+    if (!supabase || pending.length === 0) return;
+    try {
+      const { error } = await supabase
+        .from('rounds')
+        .upsert(pending, { onConflict: 'id', ignoreDuplicates: true });
+      if (error) throw error;
+      const sent = new Set(pending.map(r => r.id));
+      localStorage.setItem(ROUNDS_KEY,
+        JSON.stringify(readPendingRounds().filter(r => !sent.has(r.id))));
+    } catch (err) {
+      console.warn('Round sync failed:', err.message || err);
+    }
+  }
+
+  // Runden eines Kindes aus der Cloud plus noch wartende; complete=false ohne Cloud
+  async function getChildRounds(childId) {
+    const pending = readPendingRounds().filter(r => r.child_id === childId);
+    if (!supabase) return { rounds: pending, complete: false };
+    try {
+      const { data, error } = await supabase
+        .from('rounds')
+        .select(ROUND_COLUMNS)
+        .eq('child_id', childId);
+      if (error) throw error;
+      const ids = new Set(data.map(r => r.id));
+      return { rounds: data.concat(pending.filter(r => !ids.has(r.id))), complete: true };
+    } catch (err) {
+      console.warn('Loading rounds failed:', err.message || err);
+      return { rounds: pending, complete: false };
+    }
   }
 
   // Statistik für eine Woche
@@ -220,6 +296,8 @@ const DataService = (() => {
     saveWordResult,
     syncChildProgress,
     clearLocalProgress,
+    recordRound,
+    getChildRounds,
     getWeekStats,
     getAllStats
   };

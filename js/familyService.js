@@ -63,6 +63,14 @@ const FamilyService = (() => {
     );
   }
 
+  function getChildRounds(childId) {
+    return unwrap(
+      client.from('rounds')
+        .select('id, played_on, finished_at, mode, direction, week, is_retry, word_count, correct, wrong')
+        .eq('child_id', childId)
+    );
+  }
+
   return {
     listFamilies,
     listChildren,
@@ -72,6 +80,7 @@ const FamilyService = (() => {
     removeChild,
     createInvite,
     acceptInvite,
-    getChildProgress
+    getChildProgress,
+    getChildRounds
   };
 })();

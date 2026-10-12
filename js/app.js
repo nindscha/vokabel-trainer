@@ -362,6 +362,15 @@ const App = (() => {
 
     const fullSetSize = recapOptions ? recapOptions.count : weekAllWords.length;
     const isRetryRound = currentWords.length < fullSetSize;
+    DataService.recordRound({
+      mode: currentMode,
+      direction,
+      week: recapOptions ? null : currentWeek,
+      isRetry: isRetryRound,
+      wordCount: sessionResults.length,
+      correct,
+      wrong
+    });
     let emoji, title;
 
     if (pct === 100) {
