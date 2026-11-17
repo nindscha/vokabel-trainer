@@ -106,12 +106,16 @@ const DataService = (() => {
     const all = JSON.parse(localStorage.getItem('vokabel_progress') || '{}');
     const key = `week_${week}`;
     if (!all[key]) all[key] = {};
-    if (!all[key][word]) all[key][word] = { correct: 0, wrong: 0, lastPracticed: null };
+    if (!all[key][word]) all[key][word] = { correct: 0, wrong: 0, streak: 0, lastPracticed: null };
 
+    // streak: richtige Antworten in Folge, eine falsche setzt auf 0
+    const entry = all[key][word];
     if (correct) {
-      all[key][word].correct++;
+      entry.correct++;
+      entry.streak = (entry.streak || 0) + 1;
     } else {
-      all[key][word].wrong++;
+      entry.wrong++;
+      entry.streak = 0;
     }
     all[key][word].lastPracticed = Logic.localDate();
     localStorage.setItem('vokabel_progress', JSON.stringify(all));
@@ -138,6 +142,7 @@ const DataService = (() => {
       word_en: word,
       correct: entry.correct,
       wrong: entry.wrong,
+      streak: entry.streak || 0,
       last_practiced: entry.lastPracticed
     };
   }
@@ -156,7 +161,7 @@ const DataService = (() => {
     try {
       const { data, error } = await supabase
         .from('progress')
-        .select('week, word_en, correct, wrong, last_practiced')
+        .select('week, word_en, correct, wrong, streak, last_practiced')
         .eq('child_id', childId);
       if (error) throw error;
 
@@ -169,6 +174,7 @@ const DataService = (() => {
           all[key][row.word_en] = {
             correct: row.correct,
             wrong: row.wrong,
+            streak: row.streak,
             lastPracticed: row.last_practiced
           };
         }

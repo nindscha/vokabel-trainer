@@ -69,6 +69,7 @@ const Logic = (() => {
   // ---------- Statistik ----------
   const SECURE_MIN_CORRECT = 3;
   const SECURE_MIN_RATE = 0.7;
+  const SECURE_MIN_STREAK = 3;
   const REFRESH_AFTER_DAYS = 14;
   const REFRESH_MAX_WORDS = 10;
   const CALENDAR_WEEKS = 8;
@@ -110,12 +111,14 @@ const Logic = (() => {
       toDayNumber(lastPracticed) <= toDayNumber(today) - REFRESH_AFTER_DAYS);
   }
 
+  // Sicher: gute Gesamtquote oder zuletzt SECURE_MIN_STREAK-mal in Folge richtig.
   // Mit today verfällt "sicher" nach REFRESH_AFTER_DAYS ohne Übung zu "auffrischen"
   function wordLevel(stats, today) {
-    const { correct = 0, wrong = 0, lastPracticed } = stats || {};
+    const { correct = 0, wrong = 0, streak = 0, lastPracticed } = stats || {};
     const attempts = correct + wrong;
     if (attempts === 0) return 'new';
-    if (correct >= SECURE_MIN_CORRECT && correct / attempts >= SECURE_MIN_RATE) {
+    const goodRate = correct >= SECURE_MIN_CORRECT && correct / attempts >= SECURE_MIN_RATE;
+    if (goodRate || streak >= SECURE_MIN_STREAK) {
       return isStale(lastPracticed, today) ? 'refresh' : 'secure';
     }
     return 'shaky';

@@ -23,7 +23,7 @@ Dann http://localhost:8000 öffnen. Nach Änderungen an Assets den Service Worke
 
 ## Supabase einrichten
 1. Projekt anlegen, URL und Publishable Key in [js/supabaseClient.js](js/supabaseClient.js) eintragen (öffentlich, die Daten schützt RLS).
-2. Die Migrationen in [sql/migrations/](sql/migrations/) in Reihenfolge im SQL Editor ausführen: zuerst `0001_baseline.sql` (Tabellen `words` und `progress`), dann [sql/seed_words.sql](sql/seed_words.sql) (Vokabeln), dann `0002_family_groups.sql` (Familien, Policies, Funktionen), `0003_revoke_write_grants.sql` (Rechte einschränken) und `0004_rounds.sql` (Übungsrunden für die Statistik). Details und offene Punkte: [sql/migrations/README.md](sql/migrations/README.md).
+2. Die Migrationen in [sql/migrations/](sql/migrations/) in Reihenfolge im SQL Editor ausführen: zuerst `0001_baseline.sql` (Tabellen `words` und `progress`), dann [sql/seed_words.sql](sql/seed_words.sql) (Vokabeln), dann `0002_family_groups.sql` (Familien, Policies, Funktionen), `0003_revoke_write_grants.sql` (Rechte einschränken), `0004_rounds.sql` (Übungsrunden für die Statistik), `0005_cleanup_anonymous_users.sql` (verwaiste Kinder-Sitzungen aufräumen) und `0006_progress_streak.sql` (richtige Antworten in Folge pro Wort). Details und offene Punkte: [sql/migrations/README.md](sql/migrations/README.md).
 3. Dashboard → Authentication → Sign In / Providers: **Allow anonymous sign-ins** aktivieren.
 4. Eltern unter Authentication → Users → Add user anlegen (Auto Confirm User).
 

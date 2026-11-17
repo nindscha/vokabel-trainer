@@ -392,7 +392,7 @@ const Family = (() => {
 
   function progressLookup(rows) {
     return new Map(rows.map(r => [`${r.week}|${r.word_en}`,
-      { correct: r.correct, wrong: r.wrong, lastPracticed: r.last_practiced }]));
+      { correct: r.correct, wrong: r.wrong, streak: r.streak, lastPracticed: r.last_practiced }]));
   }
 
   function wordKeyMap(words) {
