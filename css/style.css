@@ -12,6 +12,7 @@
   --danger: #f56565;
   --danger-bg: #fff5f5;
   --warning: #ed8936;
+  --refresh: #ecc94b;
   --bg: #f7fafc;
   --card-bg: #ffffff;
   --text: #2d3748;
@@ -901,16 +902,6 @@ body {
   background: var(--danger-bg);
 }
 
-.stat-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  background: var(--card-bg);
-  border-radius: var(--radius);
-  padding: 18px 20px;
-  box-shadow: var(--shadow);
-}
-
 .results-stat-number.small {
   font-size: 1.6rem;
 }
@@ -962,8 +953,27 @@ body {
   background: var(--border);
 }
 
-.calendar-day.played {
+.calendar-day.played-1,
+.calendar-key.played-1 {
+  background: #9ae6b4;
+}
+
+.calendar-day.played-2,
+.calendar-key.played-2 {
   background: var(--success);
+}
+
+.calendar-day.played-3,
+.calendar-key.played-3 {
+  background: #2f855a;
+}
+
+.calendar-key {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  background: var(--border);
 }
 
 .calendar-day.future {
@@ -992,6 +1002,11 @@ body {
 .level-seg.secure,
 .legend-dot.secure {
   background: var(--success);
+}
+
+.level-seg.refresh,
+.legend-dot.refresh {
+  background: var(--refresh);
 }
 
 .level-seg.shaky,
@@ -1027,27 +1042,41 @@ body {
 
 .trend {
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
+  grid-template-columns: repeat(8, minmax(0, 1fr));
   gap: 6px;
   align-items: end;
 }
 
 .trend-col {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
 }
 
+.trend-values {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.1;
+}
+
 .trend-value {
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   color: var(--text-light);
+}
+
+.trend-value.mode-quiz {
+  color: var(--primary-dark);
+  font-weight: 600;
 }
 
 .trend-track {
   width: 100%;
   height: 80px;
   display: flex;
+  gap: 2px;
   align-items: flex-end;
   background: var(--bg);
   border-radius: 4px;
@@ -1055,9 +1084,81 @@ body {
 }
 
 .trend-fill {
-  width: 100%;
+  flex: 1;
   background: var(--primary);
   border-radius: 4px 4px 0 0;
+}
+
+.trend-fill.mode-flashcard,
+.legend-dot.trend-flashcard {
+  background: var(--primary-light);
+}
+
+.legend-dot.trend-quiz {
+  background: var(--primary);
+}
+
+.trend-up {
+  color: var(--success);
+  font-weight: 600;
+}
+
+.trend-down {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.week-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.goal-days {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.goal-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+}
+
+.goal-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+}
+
+.goal-day.played .goal-dot {
+  background: var(--success);
+  border-color: var(--success);
+}
+
+.goal-day.today .goal-dot {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+
+.goal-label {
+  font-size: 0.65rem;
+  color: var(--text-lighter);
+}
+
+.goal-done {
+  color: var(--success);
+  font-weight: 600;
+}
+
+.week-details summary {
+  cursor: pointer;
+  font-weight: 600;
+  margin-bottom: 8px;
 }
 
 .trend-label {

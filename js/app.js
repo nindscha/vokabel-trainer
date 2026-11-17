@@ -47,7 +47,7 @@ const App = (() => {
 
     // Header stats
     document.getElementById('total-score').textContent =
-      `🔥 ${stats.totalCorrect}`;
+      `⭐ ${stats.totalCorrect}`;
     const child = AuthService.getChild();
     document.getElementById('account-btn').textContent = child ? `👤 ${child.name}` : '👤';
 
@@ -65,20 +65,21 @@ const App = (() => {
 
     weeks.forEach((w, i) => {
       const weekStats = DataService.getWeekStats(w.week);
-      const pct = w.wordCount > 0
-        ? Math.round((weekStats.practiced / w.wordCount) * 100)
-        : 0;
+      const share = n => w.wordCount > 0 ? Math.min(100, Math.round((n / w.wordCount) * 100)) : 0;
+      const securePct = share(weekStats.secure);
 
+      // Balken: geübt, Ring: sicher
       const fill = h('div', { class: 'progress-bar-fill' });
-      fill.style.width = `${pct}%`;
+      fill.style.width = `${share(weekStats.practiced)}%`;
       const card = h('button', { class: 'week-card' },
         h('div', { class: 'week-card-icon' }, weekIcons[i % weekIcons.length]),
         h('div', { class: 'week-card-content' },
           h('div', { class: 'week-card-title' }, `Woche ${w.week}`),
-          h('div', { class: 'week-card-subtitle' }, `${w.wordCount} Vokabeln`),
+          h('div', { class: 'week-card-subtitle' },
+            `${w.wordCount} Vokabeln · ${weekStats.practiced} geübt · ${weekStats.secure} sicher`),
           h('div', { class: 'progress-bar-bg' }, fill)),
         h('div', { class: 'week-card-progress' },
-          h('div', { class: 'week-card-progress-ring' }, `${pct}%`)));
+          h('div', { class: 'week-card-progress-ring', title: 'sicher', 'aria-label': `${securePct} % sicher` }, `${securePct}%`)));
       card.type = 'button';
       card.addEventListener('click', () => selectWeek(w.week));
       weekList.append(card);

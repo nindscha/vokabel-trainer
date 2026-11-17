@@ -58,7 +58,7 @@ const FamilyService = (() => {
   function getChildProgress(childId) {
     return unwrap(
       client.from('progress')
-        .select('week, word_en, correct, wrong, last_practiced')
+        .select('week, word_en, correct, wrong, streak, last_practiced')
         .eq('child_id', childId)
     );
   }
