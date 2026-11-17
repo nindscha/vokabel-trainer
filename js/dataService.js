@@ -282,8 +282,14 @@ const DataService = (() => {
   }
 
   // Statistik für eine Woche
+  // Geübte und sichere Wörter einer Woche (sicher nach Logic.wordLevel, mit Verfall)
   function getWeekStats(week) {
-    return { practiced: Object.keys(getProgress(week)).length };
+    const entries = Object.values(getProgress(week));
+    const today = Logic.localDate();
+    return {
+      practiced: entries.length,
+      secure: entries.filter(entry => Logic.wordLevel(entry, today) === 'secure').length
+    };
   }
 
   // Gesamtstatistik

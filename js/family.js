@@ -148,11 +148,19 @@ const Family = (() => {
       const today = Logic.localDate();
       const dates = rounds.map(r => r.played_on);
       const getStats = word => DataService.getProgress(word.week)[word.en];
+      // Gleiche Zeilenform wie progress aus der Cloud, damit dieselbe Regel greift
+      const rows = words.map(word => {
+        const { correct = 0, wrong = 0, lastPracticed = null } = getStats(word) || {};
+        return { week: word.week, word_en: word.en, correct, wrong, last_practiced: lastPracticed };
+      });
       loading.replaceWith(
+        Stats.weekCard(rounds, today, lastPlayed(rounds, rows)),
         Stats.streakCard(dates, today),
-        Stats.calendarCard(dates, today, complete),
-        Stats.levelCard(groupByWeek(words), getStats),
-        Stats.refreshCard(Logic.wordsToRefresh(words, getStats, today), App.startWordSet));
+        Stats.calendarCard(rounds, today, complete),
+        Stats.difficultCard(Logic.difficultWords(rows), wordKeyMap(words), App.startWordSet),
+        Stats.refreshCard(Logic.wordsToRefresh(words, getStats, today), App.startWordSet),
+        Stats.levelCard(groupByWeek(words), getStats, today),
+        Stats.trendCard(rounds, today));
     } catch (err) {
       loading.remove();
       setMessage(err.message || String(err));
@@ -257,7 +265,7 @@ const Family = (() => {
       wordsPromise
     ]);
     const progress = progressLookup(rows);
-    const counts = Logic.levelCounts(words, word => progress.get(`${word.week}|${word.en}`));
+    const counts = Logic.levelCounts(words, word => progress.get(`${word.week}|${word.en}`), today);
     return Stats.childSummary(child.name, rounds.map(r => r.played_on), counts, today, onOpen);
   }
 
@@ -387,14 +395,14 @@ const Family = (() => {
       { correct: r.correct, wrong: r.wrong, lastPracticed: r.last_practiced }]));
   }
 
-  function formatDate(iso) {
-    if (!iso) return '–';
-    return new Date(`${iso}T00:00:00`).toLocaleDateString('de-DE');
+  function wordKeyMap(words) {
+    return new Map(words.map(w => [`${w.week}|${w.en}`, w]));
   }
 
-  function percent(correct, wrong) {
-    const total = correct + wrong;
-    return total === 0 ? 0 : Math.round((correct / total) * 100);
+  // Letzter Übungstag aus den Runden, sonst aus dem Wortfortschritt
+  function lastPlayed(rounds, rows = []) {
+    const dates = rounds.map(r => r.played_on).concat(rows.map(r => r.last_practiced));
+    return dates.filter(Boolean).sort().pop() || null;
   }
 
   function buildProgress(rows, words, rounds) {
@@ -402,36 +410,19 @@ const Family = (() => {
       return [h('p', { class: 'muted' }, 'Noch nichts geübt.')];
     }
 
-    const totalCorrect = rows.reduce((sum, r) => sum + r.correct, 0);
-    const totalWrong = rows.reduce((sum, r) => sum + r.wrong, 0);
-    const lastDate = rows.map(r => r.last_practiced).filter(Boolean).sort().pop();
-
-    const summary = h('div', { class: 'stat-grid' },
-      stat(totalCorrect, 'Richtig', 'correct'),
-      stat(totalWrong, 'Falsch', 'wrong'),
-      stat(`${percent(totalCorrect, totalWrong)}%`, 'Quote'),
-      stat(formatDate(lastDate), 'Zuletzt geübt'));
-
     const today = Logic.localDate();
     const dates = rounds.map(r => r.played_on);
     const progress = progressLookup(rows);
     const getStats = word => progress.get(`${word.week}|${word.en}`);
-    const translations = new Map(words.map(w => [`${w.week}|${w.en}`, w.de]));
 
     return [
-      summary,
+      Stats.weekCard(rounds, today, lastPlayed(rounds, rows)),
       Stats.streakCard(dates, today),
-      Stats.calendarCard(dates, today),
-      Stats.levelCard(groupByWeek(words), getStats),
+      Stats.calendarCard(rounds, today),
+      Stats.levelCard(groupByWeek(words), getStats, today),
       Stats.trendCard(rounds, today),
-      Stats.difficultCard(Logic.difficultWords(rows), translations)
+      Stats.difficultCard(Logic.difficultWords(rows), wordKeyMap(words))
     ];
-  }
-
-  function stat(value, label, kind = '') {
-    return h('div', { class: 'results-stat' },
-      h('div', { class: `results-stat-number small ${kind}` }, String(value)),
-      h('div', { class: 'results-stat-label' }, label));
   }
 
   return { open };
